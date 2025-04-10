@@ -8,43 +8,52 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// setupSimpleAssetTest configura un entorno mínimo para probar AssetMin sin un watcher real
-func setupSimpleAssetTest(t *testing.T, cleanDir bool) (
-	themeDir string,
-	publicDir string,
-	assetsHandler *AssetMin,
-	mainJsPath string,
-	styleCssPath string,
-) {
-	// Crear directorio real en lugar de uno temporal
-	baseDir := filepath.Join(".", "test")
-	themeDir = filepath.Join(baseDir, "theme")
-	publicDir = filepath.Join(baseDir, "public")
+// TestEnvironment holds all the paths and components needed for asset tests
+type TestEnvironment struct {
+	BaseDir       string
+	ThemeDir      string
+	PublicDir     string
+	ModulesDir    string
+	MainJsPath    string
+	StyleCssPath  string
+	AssetsHandler *AssetMin
+	t             *testing.T
+}
 
-	// Limpiar contenido si se solicita
-	if cleanDir {
-		if _, err := os.Stat(baseDir); err == nil {
-			t.Log("Cleaning test directory content...")
-			// Eliminar contenido pero mantener el directorio
-			entries, err := os.ReadDir(baseDir)
-			if err == nil {
-				for _, entry := range entries {
-					entryPath := filepath.Join(baseDir, entry.Name())
-					os.RemoveAll(entryPath)
-				}
+// CleanDirectory removes all content from the test directory but keeps the directory itself
+func (env *TestEnvironment) CleanDirectory() {
+	if _, err := os.Stat(env.BaseDir); err == nil {
+		env.t.Log("Cleaning test directory content...")
+		// Remove content but keep the directory
+		entries, err := os.ReadDir(env.BaseDir)
+		if err == nil {
+			for _, entry := range entries {
+				entryPath := filepath.Join(env.BaseDir, entry.Name())
+				os.RemoveAll(entryPath)
 			}
 		}
 	}
+}
 
-	// Crear directorios
+// setupTest configures a minimal environment for testing AssetMin
+// defaul write to disk is true, but can be set to false for testing purposes
+func setupTest(t *testing.T) *TestEnvironment {
+	// Create real directory instead of a temporary one
+	baseDir := filepath.Join(".", "test")
+	themeDir := filepath.Join(baseDir, "web", "theme")
+	publicDir := filepath.Join(baseDir, "web", "public")
+	modulesDir := filepath.Join(baseDir, "modules")
+
+	// Create directories
 	require.NoError(t, os.MkdirAll(themeDir, 0755))
 	require.NoError(t, os.MkdirAll(publicDir, 0755))
+	require.NoError(t, os.MkdirAll(modulesDir, 0755))
 
-	// Configurar rutas de salida
-	mainJsPath = filepath.Join(publicDir, "main.js")
-	styleCssPath = filepath.Join(publicDir, "style.css")
+	// Configure output paths
+	mainJsPath := filepath.Join(publicDir, "main.js")
+	styleCssPath := filepath.Join(publicDir, "style.css")
 
-	// Crear configuración de assets con logging usando t.Log
+	// Create asset configuration with logging using t.Log
 	config := &Config{
 		ThemeFolder:    func() string { return themeDir },
 		WebFilesFolder: func() string { return publicDir },
@@ -56,9 +65,18 @@ func setupSimpleAssetTest(t *testing.T, cleanDir bool) (
 		},
 	}
 
-	// Crear manejador de assets con escritura en disco habilitada
-	assetsHandler = NewAssetMinify(config)
-	assetsHandler.writeOnDisk = true
+	// Create asset handler with disk writing enabled
+	assetsHandler := NewAssetMinify(config)
+	assetsHandler.WriteOnDisk = true
 
-	return
+	return &TestEnvironment{
+		BaseDir:       baseDir,
+		ThemeDir:      themeDir,
+		PublicDir:     publicDir,
+		ModulesDir:    modulesDir,
+		MainJsPath:    mainJsPath,
+		StyleCssPath:  styleCssPath,
+		AssetsHandler: assetsHandler,
+		t:             t,
+	}
 }

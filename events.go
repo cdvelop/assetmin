@@ -11,7 +11,7 @@ import (
 )
 
 func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, content []byte) (*fileHandler, error) {
-	file := &File{
+	file := &assetFile{
 		path:    filePath,
 		content: content,
 	}
@@ -30,7 +30,7 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 }
 
 // assetHandlerFiles ej &jsHandler, &cssHandler
-func (c AssetMin) updateAsset(filePath, event string, assetHandler *fileHandler, newFile *File) {
+func (c AssetMin) updateAsset(filePath, event string, assetHandler *fileHandler, newFile *assetFile) {
 
 	filesToUpdate := &assetHandler.moduleFiles
 
@@ -51,7 +51,7 @@ func (c AssetMin) updateAsset(filePath, event string, assetHandler *fileHandler,
 	}
 }
 
-func (c AssetMin) findFileIndex(files []*File, filePath string) int {
+func (c AssetMin) findFileIndex(files []*assetFile, filePath string) int {
 	for i, f := range files {
 		if f.path == filePath {
 			return i
@@ -85,14 +85,14 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 	}
 
 	// Enable disk writing on first write event
-	if event == "write" && !c.writeOnDisk {
-		c.writeOnDisk = true
+	if event == "write" && !c.WriteOnDisk {
+		c.WriteOnDisk = true
 	}
 
-	if !c.writeOnDisk {
+	if !c.WriteOnDisk {
 		return nil
 	}
-	c.Print("debug", "writing "+extension+" to disk...")
+	c.Print("DEBUG:", "writing "+extension+" to disk...")
 
 	var buf bytes.Buffer
 
@@ -151,6 +151,6 @@ func (c *AssetMin) startCodeJS() (out string, err error) {
 
 // clear memory files
 func (f *fileHandler) ClearMemoryFiles() {
-	f.themeFiles = []*File{}
-	f.moduleFiles = []*File{}
+	f.themeFiles = []*assetFile{}
+	f.moduleFiles = []*assetFile{}
 }

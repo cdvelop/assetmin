@@ -31,7 +31,7 @@ func FileWrite(pathFile string, data bytes.Buffer) error {
 	defer dst.Close()
 
 	// fmt.Println("data antes de escribir:", data.String())
-	// Copy the uploaded File to the filesystem at the specified destination
+	// Copy the uploaded assetFile to the filesystem at the specified destination
 	// _, e = io.Copy(dst, bytes.NewReader(data.Bytes()))
 	_, err = io.Copy(dst, &data)
 	if err != nil {
