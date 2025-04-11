@@ -93,7 +93,7 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 	if !c.WriteOnDisk {
 		return nil
 	}
-	c.Print("DEBUG:", "writing "+extension+" to disk...")
+	// c.Print("DEBUG:", "writing "+extension+" to disk...")
 
 	var buf bytes.Buffer
 
@@ -125,7 +125,7 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 	// For testing, write the module file content directly without any additions
 	if testing.Testing() {
 		if len(fh.moduleFiles) > 0 {
-			c.Print("debug", "writing test content to disk:", string(fh.moduleFiles[0].content))
+			// c.Print("debug", "writing test content to disk:", string(fh.moduleFiles[0].content))
 			if err := FileWrite(outputPath, *bytes.NewBuffer(fh.moduleFiles[0].content)); err != nil {
 				return errors.New(e + err.Error())
 			}
@@ -135,7 +135,7 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 		if err := c.min.Minify(fh.mediatype, &minifiedBuf, &buf); err != nil {
 			return errors.New(e + err.Error())
 		}
-		c.Print("debug", "writing to disk (minified):", minifiedBuf.String())
+		// c.Print("debug", "writing to disk (minified):", minifiedBuf.String())
 		if err := FileWrite(outputPath, minifiedBuf); err != nil {
 			return errors.New(e + err.Error())
 		}

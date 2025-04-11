@@ -23,7 +23,7 @@ type TestEnvironment struct {
 // CleanDirectory removes all content from the test directory but keeps the directory itself
 func (env *TestEnvironment) CleanDirectory() {
 	if _, err := os.Stat(env.BaseDir); err == nil {
-		env.t.Log("Cleaning test directory content...")
+		// env.t.Log("Cleaning test directory content...")
 		// Remove content but keep the directory
 		entries, err := os.ReadDir(env.BaseDir)
 		if err == nil {
