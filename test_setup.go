@@ -31,23 +31,20 @@ func (env *TestEnvironment) CleanDirectory() {
 				entryPath := filepath.Join(env.BaseDir, entry.Name())
 				os.RemoveAll(entryPath)
 			}
+		} else {
+			env.t.Fatalf("Error reading directory: %v", err)
 		}
 	}
 }
 
-// setupTest configures a minimal environment for testing AssetMin
-// defaul write to disk is true, but can be set to false for testing purposes
-func setupTest(t *testing.T) *TestEnvironment {
+// setupScenario configures a minimal environment for testing AssetMin
+// default write to disk is true, but can be set to false for testing purposes
+func setupScenario(testCase string, t *testing.T) *TestEnvironment {
 	// Create real directory instead of a temporary one
-	baseDir := filepath.Join(".", "test")
+	baseDir := filepath.Join(".", "test", testCase)
 	themeDir := filepath.Join(baseDir, "web", "theme")
 	publicDir := filepath.Join(baseDir, "web", "public")
 	modulesDir := filepath.Join(baseDir, "modules")
-
-	// Create directories
-	require.NoError(t, os.MkdirAll(themeDir, 0755))
-	require.NoError(t, os.MkdirAll(publicDir, 0755))
-	require.NoError(t, os.MkdirAll(modulesDir, 0755))
 
 	// Configure output paths
 	mainJsPath := filepath.Join(publicDir, "main.js")
@@ -69,6 +66,10 @@ func setupTest(t *testing.T) *TestEnvironment {
 	assetsHandler := NewAssetMinify(config)
 	assetsHandler.WriteOnDisk = true
 
+	// Create the base directory if it doesn't exist
+	err := os.MkdirAll(baseDir, 0755)
+	require.NoError(t, err, "Failed to create base directory")
+
 	return &TestEnvironment{
 		BaseDir:       baseDir,
 		ThemeDir:      themeDir,
@@ -79,4 +80,25 @@ func setupTest(t *testing.T) *TestEnvironment {
 		AssetsHandler: assetsHandler,
 		t:             t,
 	}
+}
+
+// CreateThemeDir creates the theme directory if it doesn't exist
+func (env *TestEnvironment) CreateThemeDir() *TestEnvironment {
+	err := os.MkdirAll(env.ThemeDir, 0755)
+	require.NoError(env.t, err, "Failed to create theme directory")
+	return env
+}
+
+// CreatePublicDir creates the public directory if it doesn't exist
+func (env *TestEnvironment) CreatePublicDir() *TestEnvironment {
+	err := os.MkdirAll(env.PublicDir, 0755)
+	require.NoError(env.t, err, "Failed to create public directory")
+	return env
+}
+
+// CreateModulesDir creates the modules directory if it doesn't exist
+func (env *TestEnvironment) CreateModulesDir() *TestEnvironment {
+	err := os.MkdirAll(env.ModulesDir, 0755)
+	require.NoError(env.t, err, "Failed to create modules directory")
+	return env
 }
