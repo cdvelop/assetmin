@@ -36,39 +36,21 @@ func TestAssetScenario(t *testing.T) {
 
 	})
 
-	t.Run("uc02_existing_directory", func(t *testing.T) {
-		// en este caso los directorios ya existen y se crea un archivo JS que luego se edita
-		// se espera que el contenido no esté duplicado en la salida web/public/main.js
-		env := setupTestEnv("uc02_existing_directory", t)
+	t.Run("uc02_crud_operations", func(t *testing.T) {
+		// En este caso probamos operaciones CRUD (Create, Read, Update, Delete) en archivos
+		// Se espera que el contenido se actualice correctamente (sin duplicados) y
+		// que el contenido sea eliminado cuando se elimina el archivo
+		env := setupTestEnv("uc02_crud_operations", t)
 
-		// Crear directorios primero
-		env.CreatePublicDir()
+		// Probar operaciones CRUD para archivos JS
+		t.Run("js_file", func(t *testing.T) {
+			env.TestFileCRUDOperations(".js")
+		})
 
-		// 1. Crear archivo JS inicial
-		jsFileName := "script1.js"
-		jsFilePath := filepath.Join(env.BaseDir, jsFileName)
-		initialContent := []byte("console.log('Initial content');")
-
-		require.NoError(t, os.WriteFile(jsFilePath, initialContent, 0644))
-		require.NoError(t, env.AssetsHandler.NewFileEvent(jsFileName, ".js", jsFilePath, "create"))
-
-		// Verificar que el archivo main.js fue creado con el contenido inicial
-		_, err := os.Stat(env.MainJsPath)
-		require.NoError(t, err, "El archivo main.js no fue creado")
-		initialMainContent, err := os.ReadFile(env.MainJsPath)
-		require.NoError(t, err, "No se pudo leer el archivo main.js")
-		require.Contains(t, string(initialMainContent), "Initial content", "El contenido inicial no es el esperado")
-
-		// 2. Editar el mismo archivo JS
-		updatedContent := []byte("console.log('Updated content');")
-		require.NoError(t, os.WriteFile(jsFilePath, updatedContent, 0644))
-		require.NoError(t, env.AssetsHandler.NewFileEvent(jsFileName, ".js", jsFilePath, "write"))
-
-		// Verificar que el contenido se actualizó y no está duplicado
-		updatedMainContent, err := os.ReadFile(env.MainJsPath)
-		require.NoError(t, err, "No se pudo leer el archivo main.js actualizado")
-		require.Contains(t, string(updatedMainContent), "Updated content", "El contenido actualizado no está presente")
-		require.NotContains(t, string(updatedMainContent), "Initial content", "El contenido inicial no debería estar presente")
+		// Probar operaciones CRUD para archivos CSS
+		t.Run("css_file", func(t *testing.T) {
+			env.TestFileCRUDOperations(".css")
+		})
 
 		env.CleanDirectory()
 	})

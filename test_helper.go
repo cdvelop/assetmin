@@ -127,3 +127,66 @@ func (env *TestEnvironment) TestConcurrentFileProcessing(fileExtension string, f
 			fmt.Sprintf("The original content of %s file %d should not be present", fileType, i+1))
 	}
 }
+
+// TestFileCRUDOperations tests the complete CRUD cycle (create, write, remove) for a file
+func (env *TestEnvironment) TestFileCRUDOperations(fileExtension string) {
+	// Determine the file type and appropriate output path
+	var outputPath string
+
+	switch fileExtension {
+	case ".js":
+		outputPath = env.MainJsPath
+	case ".css":
+		outputPath = env.MainCssPath
+	default:
+		env.t.Fatalf("Unsupported file extension: %s", fileExtension)
+	}
+
+	// Create directories first
+	env.CreatePublicDir()
+
+	// 1. Create file with initial content
+	fileName := fmt.Sprintf("script1%s", fileExtension)
+	filePath := filepath.Join(env.BaseDir, fileName)
+	var initialContent []byte
+
+	if fileExtension == ".js" {
+		initialContent = []byte("console.log('Initial content');")
+	} else {
+		initialContent = []byte(".test { color: blue; content: 'Initial content'; }")
+	}
+
+	require.NoError(env.t, os.WriteFile(filePath, initialContent, 0644))
+	require.NoError(env.t, env.AssetsHandler.NewFileEvent(fileName, fileExtension, filePath, "create"))
+
+	// Verify that the output file was created with the initial content
+	_, err := os.Stat(outputPath)
+	require.NoError(env.t, err, fmt.Sprintf("El archivo %s no fue creado", outputPath))
+	initialOutputContent, err := os.ReadFile(outputPath)
+	require.NoError(env.t, err, fmt.Sprintf("No se pudo leer el archivo %s", outputPath))
+	require.Contains(env.t, string(initialOutputContent), "Initial content", "El contenido inicial no es el esperado")
+
+	// 2. Update the file content
+	var updatedContent []byte
+	if fileExtension == ".js" {
+		updatedContent = []byte("console.log('Updated content');")
+	} else {
+		updatedContent = []byte(".test { color: red; content: 'Updated content'; }")
+	}
+	require.NoError(env.t, os.WriteFile(filePath, updatedContent, 0644))
+	require.NoError(env.t, env.AssetsHandler.NewFileEvent(fileName, fileExtension, filePath, "write"))
+
+	// Verify the content was updated and not duplicated
+	updatedOutputContent, err := os.ReadFile(outputPath)
+	require.NoError(env.t, err, fmt.Sprintf("No se pudo leer el archivo %s actualizado", outputPath))
+	require.Contains(env.t, string(updatedOutputContent), "Updated content", "El contenido actualizado no está presente")
+	require.NotContains(env.t, string(updatedOutputContent), "Initial content", "El contenido inicial no debería estar presente")
+
+	// 3. Remove the file
+	require.NoError(env.t, env.AssetsHandler.NewFileEvent(fileName, fileExtension, filePath, "remove"))
+
+	// Verify the content was removed
+	finalOutputContent, err := os.ReadFile(outputPath)
+	require.NoError(env.t, err, fmt.Sprintf("No se pudo leer el archivo %s después de eliminar", outputPath))
+	require.NotContains(env.t, string(finalOutputContent), "Updated content", "El contenido eliminado no debería estar presente")
+}
