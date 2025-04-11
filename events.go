@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"os"
-	"path"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -118,11 +116,9 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 		buf.Write(f.content)
 		buf.WriteString("\n") // Add newline between files
 	}
-	outputPath := path.Join(c.WebFilesFolder(), fh.fileOutputName)
-	// Ensure directory exists before writing
-	if err := os.MkdirAll(path.Dir(outputPath), 0755); err != nil {
-		return errors.New(e + err.Error())
-	}
+
+	outputPath := fh.outputPath
+	// No need to check directories again, they were created in initialization
 
 	//  Minify and write the buffer
 	var minifiedBuf bytes.Buffer
@@ -139,10 +135,9 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 
 func (c *AssetMin) UnobservedFiles() []string {
 	// Return the full path of the output files to ignore
-	outputDir := c.WebFilesFolder() // Get the output directory path
 	return []string{
-		filepath.Join(outputDir, c.cssHandler.fileOutputName), // e.g., C:\...\public\style.css
-		filepath.Join(outputDir, c.jsHandler.fileOutputName),  // e.g., C:\...\public\main.js
+		c.cssHandler.outputPath,
+		c.jsHandler.outputPath,
 	}
 }
 

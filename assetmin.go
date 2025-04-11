@@ -2,6 +2,7 @@ package assetmin
 
 import (
 	"os"
+	"path/filepath"
 	"regexp"
 
 	"sync"
@@ -32,6 +33,7 @@ type AssetConfig struct {
 
 type fileHandler struct {
 	fileOutputName string                 // eg: main.js,style.css
+	outputPath     string                 // full path to output file eg: web/public/main.js
 	startCode      func() (string, error) // eg: "console.log('hello world')"
 	themeFiles     []*assetFile           // files from theme folder
 	moduleFiles    []*assetFile           // files from modules folder
@@ -69,7 +71,11 @@ func NewAssetMin(config *AssetConfig) *AssetMin {
 
 	c.jsHandler.startCode = c.startCodeJS
 
-	// Asegurar que el directorio de salida exista
+	// Initialize output paths
+	c.cssHandler.outputPath = filepath.Join(c.WebFilesFolder(), c.cssHandler.fileOutputName)
+	c.jsHandler.outputPath = filepath.Join(c.WebFilesFolder(), c.jsHandler.fileOutputName)
+
+	// Ensure output directories exist
 	c.EnsureOutputDirectoryExists()
 
 	return c
@@ -77,8 +83,17 @@ func NewAssetMin(config *AssetConfig) *AssetMin {
 
 // crea el directorio de salida si no existe
 func (c *AssetMin) EnsureOutputDirectoryExists() {
+	// Ensure main output directory exists
 	outputDir := c.WebFilesFolder()
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		c.Print("dont create output dir", err)
+	}
+
+	// Ensure parent directories for both handlers
+	for _, handler := range []*fileHandler{c.cssHandler, c.jsHandler} {
+		dir := filepath.Dir(handler.outputPath)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			c.Print("Couldn't create directory for", handler.fileOutputName, "-", err)
+		}
 	}
 }

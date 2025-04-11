@@ -46,10 +46,6 @@ func setupTestEnv(testCase string, t *testing.T) *TestEnvironment {
 	publicDir := filepath.Join(baseDir, "web", "public")
 	modulesDir := filepath.Join(baseDir, "modules")
 
-	// Configure output paths
-	mainJsPath := filepath.Join(publicDir, "main.js")
-	styleCssPath := filepath.Join(publicDir, "style.css")
-
 	// Create asset configuration with logging using t.Log
 	config := &AssetConfig{
 		ThemeFolder:    func() string { return themeDir },
@@ -75,8 +71,8 @@ func setupTestEnv(testCase string, t *testing.T) *TestEnvironment {
 		ThemeDir:      themeDir,
 		PublicDir:     publicDir,
 		ModulesDir:    modulesDir,
-		MainJsPath:    mainJsPath,
-		MainCssPath:   styleCssPath,
+		MainJsPath:    assetsHandler.jsHandler.outputPath,
+		MainCssPath:   assetsHandler.cssHandler.outputPath,
 		AssetsHandler: assetsHandler,
 		t:             t,
 	}
