@@ -15,7 +15,7 @@ type TestEnvironment struct {
 	PublicDir     string
 	ModulesDir    string
 	MainJsPath    string
-	StyleCssPath  string
+	MainCssPath   string
 	AssetsHandler *AssetMin
 	t             *testing.T
 }
@@ -76,7 +76,7 @@ func setupTestEnv(testCase string, t *testing.T) *TestEnvironment {
 		PublicDir:     publicDir,
 		ModulesDir:    modulesDir,
 		MainJsPath:    mainJsPath,
-		StyleCssPath:  styleCssPath,
+		MainCssPath:   styleCssPath,
 		AssetsHandler: assetsHandler,
 		t:             t,
 	}
