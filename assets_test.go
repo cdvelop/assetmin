@@ -16,7 +16,7 @@ func TestAssetScenario(t *testing.T) {
 		env := setupTestEnv("uc01_empty_directory", t)
 		// 1. Create JS file and verify output
 		jsFileName := "script1.js"
-		jsFilePath := filepath.Join(env.ModulesDir, jsFileName)
+		jsFilePath := filepath.Join(env.BaseDir, jsFileName)
 		jsContent := []byte("console.log('Hello from JS');")
 
 		t.Logf("Creating JS file: %s", jsFilePath)
@@ -33,6 +33,7 @@ func TestAssetScenario(t *testing.T) {
 		require.NoError(t, err, "No se pudo leer el archivo main.js")
 		require.Contains(t, string(content), "Hello from JS", "El contenido del archivo main.js no es el esperado")
 
-		/* env.CleanDirectory() */
+		env.CleanDirectory()
+
 	})
 }

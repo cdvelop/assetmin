@@ -66,7 +66,7 @@ func setupTestEnv(testCase string, t *testing.T) *TestEnvironment {
 	assetsHandler := NewAssetMin(config)
 	assetsHandler.WriteOnDisk = true
 
-	// Create the base directory if it doesn't exist
+	// Create only the base directory if it doesn't exist
 	err := os.MkdirAll(baseDir, 0755)
 	require.NoError(t, err, "Failed to create base directory")
 
