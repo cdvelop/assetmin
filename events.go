@@ -7,7 +7,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"testing"
 	"time"
 )
 
@@ -31,7 +30,7 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 }
 
 // assetHandlerFiles ej &jsHandler, &cssHandler
-func (c AssetMin) updateAsset(filePath, event string, assetHandler *fileHandler, newFile *assetFile) {
+func (c *AssetMin) updateAsset(filePath, event string, assetHandler *fileHandler, newFile *assetFile) {
 
 	filesToUpdate := &assetHandler.moduleFiles
 
@@ -52,7 +51,7 @@ func (c AssetMin) updateAsset(filePath, event string, assetHandler *fileHandler,
 	}
 }
 
-func (c AssetMin) findFileIndex(files []*assetFile, filePath string) int {
+func (c *AssetMin) findFileIndex(files []*assetFile, filePath string) int {
 	for i, f := range files {
 		if f.path == filePath {
 			return i
@@ -63,6 +62,9 @@ func (c AssetMin) findFileIndex(files []*assetFile, filePath string) int {
 
 // event: create, remove, write, rename
 func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) error {
+	c.mu.Lock()         // Lock the mutex at the beginning
+	defer c.mu.Unlock() // Ensure mutex is unlocked when the function returns
+
 	var e = "NewFileEvent " + extension + " " + event
 	if filePath == "" {
 		return errors.New(e + "filePath is empty")
@@ -122,23 +124,14 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 		return errors.New(e + err.Error())
 	}
 
-	// For testing, write the module file content directly without any additions
-	if testing.Testing() {
-		if len(fh.moduleFiles) > 0 {
-			// c.Print("debug", "writing test content to disk:", string(fh.moduleFiles[0].content))
-			if err := FileWrite(outputPath, *bytes.NewBuffer(fh.moduleFiles[0].content)); err != nil {
-				return errors.New(e + err.Error())
-			}
-		}
-	} else {
-		var minifiedBuf bytes.Buffer
-		if err := c.min.Minify(fh.mediatype, &minifiedBuf, &buf); err != nil {
-			return errors.New(e + err.Error())
-		}
-		// c.Print("debug", "writing to disk (minified):", minifiedBuf.String())
-		if err := FileWrite(outputPath, minifiedBuf); err != nil {
-			return errors.New(e + err.Error())
-		}
+	//  Minify and write the buffer
+	var minifiedBuf bytes.Buffer
+	if err := c.min.Minify(fh.mediatype, &minifiedBuf, &buf); err != nil {
+		return errors.New(e + err.Error())
+	}
+	// c.Print("debug", "writing to disk (minified):", minifiedBuf.String())
+	if err := FileWrite(outputPath, minifiedBuf); err != nil {
+		return errors.New(e + err.Error())
 	}
 
 	return nil

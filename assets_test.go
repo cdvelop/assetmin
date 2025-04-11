@@ -1,8 +1,10 @@
 package assetmin
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -70,6 +72,62 @@ func TestAssetScenario(t *testing.T) {
 		require.Contains(t, string(updatedMainContent), "Updated content", "El contenido actualizado no está presente")
 		require.NotContains(t, string(updatedMainContent), "Initial content", "El contenido inicial no debería estar presente")
 
+		env.CleanDirectory()
+	})
+
+	t.Run("uc03_concurrent_writes", func(t *testing.T) {
+		// En este caso probamos el comportamiento de la librería cuando múltiples
+		// archivos JS son escritos simultáneamente
+		// Se espera que todos los contenidos se encuentren en web/public/main.js
+		env := setupTestEnv("uc03_concurrent_writes", t)
+
+		// Crear directorios primero
+		env.CreatePublicDir()
+
+		// Crear 5 archivos JS diferentes para procesamiento concurrente
+		jsFiles := make([]string, 5)
+		jsPaths := make([]string, 5)
+		jsContents := make([][]byte, 5)
+
+		for i := range 5 {
+			jsFiles[i] = fmt.Sprintf("script%d.js", i+1)
+			jsPaths[i] = filepath.Join(env.BaseDir, jsFiles[i])
+			jsContents[i] = []byte(fmt.Sprintf("console.log('Content from JS file %d');", i+1))
+		}
+
+		// Escribir archivos iniciales
+		for i := range 5 {
+			require.NoError(t, os.WriteFile(jsPaths[i], jsContents[i], 0644))
+		}
+
+		// Procesar archivos concurrentemente
+		var wg sync.WaitGroup
+		for i := range 5 {
+			wg.Add(1)
+			go func(idx int) {
+				defer wg.Done()
+				require.NoError(t, env.AssetsHandler.NewFileEvent(jsFiles[idx], ".js", jsPaths[idx], "create"))
+			}(i)
+		}
+		wg.Wait()
+
+		// Verificar que el archivo main.js existe
+		_, err := os.Stat(env.MainJsPath)
+		require.NoError(t, err, "El archivo main.js no fue creado")
+
+		// Leer contenido del archivo main.js
+		content, err := os.ReadFile(env.MainJsPath)
+		require.NoError(t, err, "No se pudo leer el archivo main.js")
+
+		// Verificar que el contenido de todos los archivos está presente
+		contentStr := string(content)
+		for i := range 5 {
+			expectedContent := fmt.Sprintf("Content from JS file %d", i+1)
+			require.Contains(t, contentStr, expectedContent,
+				fmt.Sprintf("El contenido del archivo JS %d no está presente", i+1))
+		}
+
+		// Limpiar directorio al finalizar
 		// env.CleanDirectory()
 	})
 }

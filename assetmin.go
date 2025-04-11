@@ -4,6 +4,8 @@ import (
 	"os"
 	"regexp"
 
+	"sync"
+
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/css"
 	"github.com/tdewolff/minify/v2/html"
@@ -12,6 +14,7 @@ import (
 )
 
 type AssetMin struct {
+	mu sync.Mutex // Added mutex for synchronization
 	*Config
 	cssHandler *fileHandler
 	jsHandler  *fileHandler
