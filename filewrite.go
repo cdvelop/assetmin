@@ -8,32 +8,29 @@ import (
 	"path/filepath"
 )
 
-// pathFile ej: "theme/index.html"
-// data ej: *bytes.Buffer
-// NOTA: la data del buf sera eliminada después de escribir el archivo
+// pathFile e.g., "theme/index.html"
+// data e.g., *bytes.Buffer
+// NOTE: The buffer data will be cleared after writing the file
 func FileWrite(pathFile string, data bytes.Buffer) error {
 	const e = "FileWrite "
 
-	// Asegurar que el directorio existe antes de crear el archivo
+	// Ensure the directory exists before creating the file
 	dir := filepath.Dir(pathFile)
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return errors.New(e + "al crear directorio " + err.Error())
+		return errors.New(e + "while creating directory " + err.Error())
 	}
 
 	dst, err := os.Create(pathFile)
 	if err != nil {
-		return errors.New(e + "al crear archivo " + err.Error())
+		return errors.New(e + "while creating file " + err.Error())
 	}
 	defer dst.Close()
 
-	// fmt.Println("data antes de escribir:", data.String())
 	// Copy the uploaded assetFile to the filesystem at the specified destination
-	// _, e = io.Copy(dst, bytes.NewReader(data.Bytes()))
 	_, err = io.Copy(dst, &data)
 	if err != nil {
-		return errors.New(e + "no se logro escribir el archivo " + pathFile + " en el destino " + err.Error())
+		return errors.New(e + "failed to write the file " + pathFile + " to the destination " + err.Error())
 	}
-	// fmt.Println("data después de copy:", data.String(), "bytes:", data.Bytes())
 
 	return nil
 }

@@ -79,6 +79,7 @@ func TestAssetScenario(t *testing.T) {
 		// Se espera que todos los contenidos se encuentren en web/public/main.js
 		env := setupTestEnv("uc03_concurrent_writes", t)
 		env.TestConcurrentFileProcessing(".js", 5)
+		env.CleanDirectory()
 	})
 
 	t.Run("uc04_concurrent_writes_css", func(t *testing.T) {
@@ -87,5 +88,6 @@ func TestAssetScenario(t *testing.T) {
 		// Se espera que todos los contenidos se encuentren en web/public/main.css
 		env := setupTestEnv("uc04_concurrent_writes_css", t)
 		env.TestConcurrentFileProcessing(".css", 5)
+		env.CleanDirectory()
 	})
 }

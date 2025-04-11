@@ -9,10 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestConcurrentFileProcessing es una función reutilizable para probar el procesamiento
-// concurrente de archivos tanto para JS como para CSS.
+// TestConcurrentFileProcessing is a reusable function to test concurrent file processing for both JS and CSS.
 func (env *TestEnvironment) TestConcurrentFileProcessing(fileExtension string, fileCount int) {
-	// Determinar el tipo de archivo y la ruta de salida adecuada
+	// Determine the file type and appropriate output path
 	var outputPath string
 	var fileType string
 
@@ -24,10 +23,10 @@ func (env *TestEnvironment) TestConcurrentFileProcessing(fileExtension string, f
 		outputPath = env.MainCssPath
 		fileType = "CSS"
 	default:
-		env.t.Fatalf("Extensión de archivo no soportada: %s", fileExtension)
+		env.t.Fatalf("Unsupported file extension: %s", fileExtension)
 	}
 
-	// Crear archivos con contenido inicial
+	// Create files with initial content
 	fileNames := make([]string, fileCount)
 	filePaths := make([]string, fileCount)
 	fileContents := make([][]byte, fileCount)
@@ -35,15 +34,21 @@ func (env *TestEnvironment) TestConcurrentFileProcessing(fileExtension string, f
 	for i := range fileCount {
 		fileNames[i] = fmt.Sprintf("file%d%s", i+1, fileExtension)
 		filePaths[i] = filepath.Join(env.BaseDir, fileNames[i])
-		fileContents[i] = []byte(fmt.Sprintf("console.log('Content from %s file %d');", fileType, i+1))
+
+		// Generate appropriate content based on file type
+		if fileExtension == ".js" {
+			fileContents[i] = []byte(fmt.Sprintf("console.log('Content from %s file %d');", fileType, i+1))
+		} else if fileExtension == ".css" {
+			fileContents[i] = []byte(fmt.Sprintf(".test-class-%d { color: blue; content: \"Content from %s file %d\"; }", i+1, fileType, i+1))
+		}
 	}
 
-	// Escribir archivos iniciales
+	// Write initial files
 	for i := range fileCount {
 		require.NoError(env.t, os.WriteFile(filePaths[i], fileContents[i], 0644))
 	}
 
-	// Procesar archivos concurrentemente
+	// Process files concurrently
 	var wg sync.WaitGroup
 	for i := range fileCount {
 		wg.Add(1)
@@ -54,30 +59,35 @@ func (env *TestEnvironment) TestConcurrentFileProcessing(fileExtension string, f
 	}
 	wg.Wait()
 
-	// Verificar que el archivo de salida existe
+	// Verify the output file exists
 	_, err := os.Stat(outputPath)
-	require.NoError(env.t, err, fmt.Sprintf("El archivo de salida no fue creado para %s", fileType))
+	require.NoError(env.t, err, fmt.Sprintf("The output file was not created for %s", fileType))
 
-	// Leer contenido del archivo de salida
+	// Read the output file content
 	content, err := os.ReadFile(outputPath)
-	require.NoError(env.t, err, fmt.Sprintf("No se pudo leer el archivo de salida para %s", fileType))
+	require.NoError(env.t, err, fmt.Sprintf("Failed to read the output file for %s", fileType))
 
-	// Verificar que el contenido de todos los archivos está presente
+	// Verify that the content of all files is present
 	contentStr := string(content)
 	for i := range fileCount {
 		expectedContent := fmt.Sprintf("Content from %s file %d", fileType, i+1)
 		require.Contains(env.t, contentStr, expectedContent,
-			fmt.Sprintf("El contenido del archivo %s %d no está presente", fileType, i+1))
+			fmt.Sprintf("The content of %s file %d is not present", fileType, i+1))
 	}
 
-	// Actualizar todos los archivos con nuevo contenido
+	// Update all files with new content
 	updatedContents := make([][]byte, fileCount)
 	for i := range fileCount {
-		updatedContents[i] = []byte(fmt.Sprintf("console.log('Updated content from %s file %d');", fileType, i+1))
+		// Generate updated content based on file type
+		if fileExtension == ".js" {
+			updatedContents[i] = []byte(fmt.Sprintf("console.log('Updated content from %s file %d');", fileType, i+1))
+		} else if fileExtension == ".css" {
+			updatedContents[i] = []byte(fmt.Sprintf(".test-class-%d { color: red; content: \"Updated content from %s file %d\"; }", i+1, fileType, i+1))
+		}
 		require.NoError(env.t, os.WriteFile(filePaths[i], updatedContents[i], 0644))
 	}
 
-	// Procesar los archivos actualizados concurrentemente
+	// Process the updated files concurrently
 	wg = sync.WaitGroup{}
 	for i := range fileCount {
 		wg.Add(1)
@@ -88,22 +98,32 @@ func (env *TestEnvironment) TestConcurrentFileProcessing(fileExtension string, f
 	}
 	wg.Wait()
 
-	// Leer el contenido actualizado del archivo de salida
+	// Read the updated output file content
 	updatedContent, err := os.ReadFile(outputPath)
-	require.NoError(env.t, err, fmt.Sprintf("No se pudo leer el archivo de salida actualizado para %s", fileType))
+	require.NoError(env.t, err, fmt.Sprintf("Failed to read the updated output file for %s", fileType))
 	updatedContentStr := string(updatedContent)
 
-	// Verificar que el contenido actualizado de todos los archivos está presente
+	// Verify that the updated content of all files is present
 	for i := range fileCount {
-		expectedUpdatedContent := fmt.Sprintf("Updated content from %s file %d", fileType, i+1)
+		var expectedUpdatedContent string
+		if fileExtension == ".js" {
+			expectedUpdatedContent = fmt.Sprintf("Updated content from %s file %d", fileType, i+1)
+		} else if fileExtension == ".css" {
+			expectedUpdatedContent = fmt.Sprintf("content:\"Updated content from %s file %d\"", fileType, i+1)
+		}
 		require.Contains(env.t, updatedContentStr, expectedUpdatedContent,
-			fmt.Sprintf("El contenido actualizado del archivo %s %d no está presente", fileType, i+1))
+			fmt.Sprintf("The updated content of %s file %d is not present", fileType, i+1))
 	}
 
-	// Verificar que el contenido original ya no está presente (no hay duplicación)
+	// Verify that the original content is no longer present (no duplication)
 	for i := range fileCount {
-		originalContent := fmt.Sprintf("Content from %s file %d", fileType, i+1)
+		var originalContent string
+		if fileExtension == ".js" {
+			originalContent = fmt.Sprintf("Content from %s file %d", fileType, i+1)
+		} else if fileExtension == ".css" {
+			originalContent = fmt.Sprintf("content:\"Content from %s file %d\"", fileType, i+1)
+		}
 		require.NotContains(env.t, updatedContentStr, originalContent,
-			fmt.Sprintf("El contenido original del archivo %s %d no debería estar presente", fileType, i+1))
+			fmt.Sprintf("The original content of %s file %d should not be present", fileType, i+1))
 	}
 }
