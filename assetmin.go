@@ -1,6 +1,7 @@
 package assetmin
 
 import (
+	"os"
 	"regexp"
 
 	"github.com/tdewolff/minify/v2"
@@ -39,7 +40,7 @@ type assetFile struct {
 	content []byte /// eg: "console.log('hello world')"
 }
 
-func NewAssetMinify(config *Config) *AssetMin {
+func NewAssetMin(config *Config) *AssetMin {
 	c := &AssetMin{
 		Config: config,
 		cssHandler: &fileHandler{
@@ -65,5 +66,16 @@ func NewAssetMinify(config *Config) *AssetMin {
 
 	c.jsHandler.startCode = c.startCodeJS
 
+	// Asegurar que el directorio de salida exista
+	c.EnsureOutputDirectoryExists()
+
 	return c
+}
+
+// crea el directorio de salida si no existe
+func (c *AssetMin) EnsureOutputDirectoryExists() {
+	outputDir := c.WebFilesFolder()
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		c.Print("dont create output dir", err)
+	}
 }

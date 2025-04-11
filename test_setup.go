@@ -37,9 +37,9 @@ func (env *TestEnvironment) CleanDirectory() {
 	}
 }
 
-// setupScenario configures a minimal environment for testing AssetMin
+// setupTestEnv configures a minimal environment for testing AssetMin
 // default write to disk is true, but can be set to false for testing purposes
-func setupScenario(testCase string, t *testing.T) *TestEnvironment {
+func setupTestEnv(testCase string, t *testing.T) *TestEnvironment {
 	// Create real directory instead of a temporary one
 	baseDir := filepath.Join(".", "test", testCase)
 	themeDir := filepath.Join(baseDir, "web", "theme")
@@ -63,7 +63,7 @@ func setupScenario(testCase string, t *testing.T) *TestEnvironment {
 	}
 
 	// Create asset handler with disk writing enabled
-	assetsHandler := NewAssetMinify(config)
+	assetsHandler := NewAssetMin(config)
 	assetsHandler.WriteOnDisk = true
 
 	// Create the base directory if it doesn't exist
