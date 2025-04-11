@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -60,6 +61,12 @@ func (c *AssetMin) findFileIndex(files []*assetFile, filePath string) int {
 
 // event: create, remove, write, rename
 func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) error {
+	// Check if filePath matches any of our output paths to avoid infinite recursion
+	if c.isOutputPath(filePath) {
+		c.Print("Skipping output file:", filePath)
+		return nil
+	}
+
 	c.mu.Lock()         // Lock the mutex at the beginning
 	defer c.mu.Unlock() // Ensure mutex is unlocked when the function returns
 
@@ -157,4 +164,14 @@ func (c *AssetMin) startCodeJS() (out string, err error) {
 func (f *fileHandler) ClearMemoryFiles() {
 	f.themeFiles = []*assetFile{}
 	f.moduleFiles = []*assetFile{}
+}
+
+// isOutputPath checks if the given file path matches any of our output paths
+func (c *AssetMin) isOutputPath(filePath string) bool {
+	// Normalize paths for cross-platform comparison
+	normalizedFilePath := filepath.Clean(filePath)
+	cssOutputPath := filepath.Clean(c.cssHandler.outputPath)
+	jsOutputPath := filepath.Clean(c.jsHandler.outputPath)
+
+	return normalizedFilePath == cssOutputPath || normalizedFilePath == jsOutputPath
 }
