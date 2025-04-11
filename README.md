@@ -34,7 +34,7 @@ import (
 
 func main() {
 	// Create configuration
-	config := &assetmin.Config{
+	config := &assetmin.AssetConfig{
 		// Define theme folder path
 		ThemeFolder: func() string { 
 			return "./web/theme" 

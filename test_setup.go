@@ -51,7 +51,7 @@ func setupTestEnv(testCase string, t *testing.T) *TestEnvironment {
 	styleCssPath := filepath.Join(publicDir, "style.css")
 
 	// Create asset configuration with logging using t.Log
-	config := &Config{
+	config := &AssetConfig{
 		ThemeFolder:    func() string { return themeDir },
 		WebFilesFolder: func() string { return publicDir },
 		Print: func(messages ...any) {

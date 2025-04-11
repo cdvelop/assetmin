@@ -15,7 +15,7 @@ import (
 
 type AssetMin struct {
 	mu sync.Mutex // Added mutex for synchronization
-	*Config
+	*AssetConfig
 	cssHandler *fileHandler
 	jsHandler  *fileHandler
 	min        *minify.M
@@ -23,7 +23,7 @@ type AssetMin struct {
 	WriteOnDisk bool // Indica si se debe escribir en disco
 }
 
-type Config struct {
+type AssetConfig struct {
 	ThemeFolder               func() string          // eg: web/theme
 	WebFilesFolder            func() string          // eg: web/static, web/public, web/assets
 	Print                     func(messages ...any)  // eg: fmt.Println
@@ -43,9 +43,9 @@ type assetFile struct {
 	content []byte /// eg: "console.log('hello world')"
 }
 
-func NewAssetMin(config *Config) *AssetMin {
+func NewAssetMin(config *AssetConfig) *AssetMin {
 	c := &AssetMin{
-		Config: config,
+		AssetConfig: config,
 		cssHandler: &fileHandler{
 			fileOutputName: "style.css",
 			themeFiles:     []*assetFile{},
