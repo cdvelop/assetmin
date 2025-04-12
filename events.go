@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 )
@@ -38,7 +39,7 @@ func (c *AssetMin) updateAsset(filePath, event string, assetHandler *fileHandler
 	}
 	if event == "remove" || event == "delete" {
 		if idx := c.findFileIndex(*filesToUpdate, filePath); idx != -1 {
-			*filesToUpdate = append((*filesToUpdate)[:idx], (*filesToUpdate)[idx+1:]...)
+			*filesToUpdate = slices.Delete((*filesToUpdate), idx, idx+1)
 		}
 	} else {
 		if idx := c.findFileIndex(*filesToUpdate, filePath); idx != -1 {
@@ -178,6 +179,10 @@ func (c *AssetMin) isOutputPath(filePath string) bool {
 	normalizedFilePath := filepath.Clean(filePath)
 	cssOutputPath := filepath.Clean(c.cssHandler.outputPath)
 	jsOutputPath := filepath.Clean(c.jsHandler.outputPath)
+	svgOutputPath := filepath.Clean(c.svgHandler.outputPath)
 
-	return normalizedFilePath == cssOutputPath || normalizedFilePath == jsOutputPath
+	return normalizedFilePath == cssOutputPath ||
+		normalizedFilePath == jsOutputPath ||
+		normalizedFilePath == svgOutputPath
+
 }

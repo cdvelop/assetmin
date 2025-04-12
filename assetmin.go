@@ -19,7 +19,9 @@ type AssetMin struct {
 	*AssetConfig
 	cssHandler *fileHandler
 	jsHandler  *fileHandler
-	min        *minify.M
+	svgHandler *svgHandler
+	// htmlHandler *fileHandler
+	min *minify.M
 
 	WriteOnDisk bool // Indica si se debe escribir en disco
 }
@@ -45,9 +47,9 @@ type assetFile struct {
 	content []byte /// eg: "console.log('hello world')"
 }
 
-func NewAssetMin(config *AssetConfig) *AssetMin {
+func NewAssetMin(cfg *AssetConfig) *AssetMin {
 	c := &AssetMin{
-		AssetConfig: config,
+		AssetConfig: cfg,
 		cssHandler: &fileHandler{
 			fileOutputName: "style.css",
 			themeFiles:     []*assetFile{},
@@ -60,12 +62,13 @@ func NewAssetMin(config *AssetConfig) *AssetMin {
 			moduleFiles:    []*assetFile{},
 			mediatype:      "text/javascript",
 		},
-		min: minify.New(),
+		svgHandler:  NewSvgHandler(cfg.WebFilesFolder()),
+		min:         minify.New(),
+		WriteOnDisk: false, // Default to false
 	}
 
 	c.min.AddFunc("text/html", html.Minify)
 	c.min.AddFunc("text/css", css.Minify)
-	// c.min.AddFunc("text/javascript", js.Minify)
 	c.min.AddFuncRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"), js.Minify)
 	c.min.AddFunc("image/svg+xml", svg.Minify)
 
@@ -74,7 +77,6 @@ func NewAssetMin(config *AssetConfig) *AssetMin {
 	// Initialize output paths
 	c.cssHandler.outputPath = filepath.Join(c.WebFilesFolder(), c.cssHandler.fileOutputName)
 	c.jsHandler.outputPath = filepath.Join(c.WebFilesFolder(), c.jsHandler.fileOutputName)
-
 	// Ensure output directories exist
 	c.EnsureOutputDirectoryExists()
 
@@ -89,11 +91,4 @@ func (c *AssetMin) EnsureOutputDirectoryExists() {
 		c.Print("dont create output dir", err)
 	}
 
-	// Ensure parent directories for both handlers
-	for _, handler := range []*fileHandler{c.cssHandler, c.jsHandler} {
-		dir := filepath.Dir(handler.outputPath)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			c.Print("Couldn't create directory for", handler.fileOutputName, "-", err)
-		}
-	}
 }
