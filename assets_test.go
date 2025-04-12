@@ -111,14 +111,15 @@ func TestAssetScenario(t *testing.T) {
 			env.TestEventBasedCompilation(".css")
 		})
 
-		// env.CleanDirectory()
+		env.CleanDirectory()
 	})
 }
 
 // TestEventBasedCompilation prueba el comportamiento de compilación basado en eventos
 // cuando el archivo main ya existe (WriteOnDisk=false):
-// - Los eventos 'create' no deben actualizar el archivo main
-// - Solo los eventos 'write' o 'delete' deben actualizar el archivo main
+// - Los eventos 'create' no deben actualizar el archivo main cuando existe una compilación previa
+// - Solo los eventos 'write' o 'delete' deben actualizar el archivo main cuando existe una compilación previa
+// - si el archivo main no existe, el evento 'create' debe crear el archivo main con el contenido nuevo
 func (env *TestEnvironment) TestEventBasedCompilation(fileExtension string) {
 	// Determinar los valores según la extensión del archivo
 	var fileName, fileContent, expectedContent string
@@ -134,7 +135,8 @@ func (env *TestEnvironment) TestEventBasedCompilation(fileExtension string) {
 	} else if fileExtension == ".css" {
 		fileName = "style1.css"
 		fileContent = "body { color: red; }"
-		expectedContent = "body { color: red; }"
+		// Usar un término de búsqueda sin depender de los espacios
+		expectedContent = "body{color:red}"
 		mainPath = env.MainCssPath
 		initialContent = ".existing-content { color: blue; }"
 	}
@@ -149,7 +151,7 @@ func (env *TestEnvironment) TestEventBasedCompilation(fileExtension string) {
 	filePath := filepath.Join(env.BaseDir, fileName)
 	require.NoError(env.t, os.WriteFile(filePath, []byte(fileContent), 0644))
 
-	// Evento CREATE: No debería actualizar el archivo main porque ya existe
+	// Evento CREATE: No debería actualizar el archivo main porque ya existe una compilacion previa
 	require.NoError(env.t, env.AssetsHandler.NewFileEvent(fileName, fileExtension, filePath, "create"))
 
 	// Verificar que el archivo main conserva el contenido original
@@ -175,7 +177,7 @@ func (env *TestEnvironment) TestEventBasedCompilation(fileExtension string) {
 	require.NotContains(env.t, string(content), expectedContent, fmt.Sprintf("El contenido eliminado no debería estar en main%s", fileExtension))
 
 	// Segunda parte: Probar comportamiento cuando el archivo main NO existe inicialmente
-
+	env.AssetsHandler.WriteOnDisk = false // volver a desactivar emulando el inicio de la libreria
 	// Eliminar el archivo main
 	require.NoError(env.t, os.Remove(mainPath))
 
@@ -192,7 +194,7 @@ func (env *TestEnvironment) TestEventBasedCompilation(fileExtension string) {
 
 	require.NoError(env.t, os.WriteFile(filePath2, []byte(fileContent2), 0644))
 
-	// Evento CREATE: Ahora SÍ debería crear el archivo main porque no existe
+	// Evento CREATE: Ahora SÍ debería crear el archivo main porque no existe una compilacion previa
 	require.NoError(env.t, env.AssetsHandler.NewFileEvent(fileName2, fileExtension, filePath2, "create"))
 
 	// Verificar que el archivo main fue creado con el contenido esperado

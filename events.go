@@ -36,8 +36,7 @@ func (c *AssetMin) updateAsset(filePath, event string, assetHandler *fileHandler
 	if strings.Contains(filePath, c.ThemeFolder()) {
 		filesToUpdate = &assetHandler.themeFiles
 	}
-
-	if event == "remove" {
+	if event == "remove" || event == "delete" {
 		if idx := c.findFileIndex(*filesToUpdate, filePath); idx != -1 {
 			*filesToUpdate = append((*filesToUpdate)[:idx], (*filesToUpdate)[idx+1:]...)
 		}
@@ -91,10 +90,17 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 	if err != nil {
 		return errors.New(e + err.Error())
 	}
-
-	// Enable disk writing on first write or create event
-	if (event == "write" || event == "create") && !c.WriteOnDisk {
-		c.WriteOnDisk = true
+	// Check event type and file existence to determine if we should write to disk
+	if !c.WriteOnDisk {
+		// If the file doesn't exist, create it regardless of event type
+		if _, err := os.Stat(fh.outputPath); os.IsNotExist(err) {
+			c.WriteOnDisk = true
+		} else if err == nil {
+			// File exists, only update on write or delete events
+			if event == "write" || event == "remove" || event == "delete" {
+				c.WriteOnDisk = true
+			}
+		}
 	}
 
 	if !c.WriteOnDisk {

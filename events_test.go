@@ -16,8 +16,8 @@ import (
 // Se prueban diferentes formatos de rutas para sistemas Windows, Mac y Linux,
 // así como comparaciones de rutas sin distinción entre mayúsculas y minúsculas.
 func TestOutputFileHandling(t *testing.T) {
-	t.Run("uc05_output_file_handling", func(t *testing.T) {
-		env := setupTestEnv("uc05_output_file_handling", t)
+	t.Run("uc00_output_file_handling", func(t *testing.T) {
+		env := setupTestEnv("uc00_output_file_handling", t)
 		env.CreatePublicDir() // Ensure public directory exists
 
 		// Create an initial JS file to ensure main.js is created
