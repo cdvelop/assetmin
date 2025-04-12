@@ -14,12 +14,20 @@ import (
 	"github.com/tdewolff/minify/v2/svg"
 )
 
+const (
+	jsMainFileName   = "main.js"    // eg: "main.js"
+	cssMainFileName  = "style.css"  // eg: "style.css"
+	svgMainFileName  = "sprite.svg" // eg: "sprite.svg"
+	htmlMainFileName = "index.html" // eg: "index.html"
+)
+
 type AssetMin struct {
 	mu sync.Mutex // Added mutex for synchronization
 	*AssetConfig
-	cssHandler *fileHandler
-	jsHandler  *fileHandler
-	svgHandler *svgHandler
+	cssHandler  *fileHandler
+	jsHandler   *fileHandler
+	svgHandler  *svgHandler
+	htmlHandler *htmlHandler
 	// htmlHandler *fileHandler
 	min *minify.M
 
@@ -51,13 +59,13 @@ func NewAssetMin(cfg *AssetConfig) *AssetMin {
 	c := &AssetMin{
 		AssetConfig: cfg,
 		cssHandler: &fileHandler{
-			fileOutputName: "style.css",
+			fileOutputName: cssMainFileName,
 			themeFiles:     []*assetFile{},
 			moduleFiles:    []*assetFile{},
 			mediatype:      "text/css",
 		},
 		jsHandler: &fileHandler{
-			fileOutputName: "main.js",
+			fileOutputName: jsMainFileName,
 			themeFiles:     []*assetFile{},
 			moduleFiles:    []*assetFile{},
 			mediatype:      "text/javascript",

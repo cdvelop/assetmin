@@ -16,6 +16,7 @@ type TestEnvironment struct {
 	ModulesDir    string
 	MainJsPath    string
 	MainCssPath   string
+	MainSvgPath   string
 	AssetsHandler *AssetMin
 	t             *testing.T
 }
@@ -73,6 +74,7 @@ func setupTestEnv(testCase string, t *testing.T) *TestEnvironment {
 		ModulesDir:    modulesDir,
 		MainJsPath:    assetsHandler.jsHandler.outputPath,
 		MainCssPath:   assetsHandler.cssHandler.outputPath,
+		MainSvgPath:   assetsHandler.svgHandler.outputPath,
 		AssetsHandler: assetsHandler,
 		t:             t,
 	}

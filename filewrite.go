@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-// pathFile e.g., "theme/index.html"
+// pathFile e.g., "theme/htmlMainFileName"
 // data e.g., *bytes.Buffer
 // NOTE: The buffer data will be cleared after writing the file
 func FileWrite(pathFile string, data bytes.Buffer) error {

@@ -9,7 +9,7 @@ import (
 )
 
 type svgHandler struct {
-	fileOutputName string // eg:  "sprite.svg"
+	fileOutputName string // eg:  svgMainFileName
 	outputPath     string // eg:  "public/sprite.svg"
 	mediatype      string // eg:  "image/svg+xml"
 	sprite         *sprite
@@ -18,7 +18,7 @@ type svgHandler struct {
 
 func NewSvgHandler(WebFilesFolder string) *svgHandler {
 	svgh := &svgHandler{
-		fileOutputName: "sprite.svg",
+		fileOutputName: svgMainFileName,
 		mediatype:      "image/svg+xml",
 		sprite:         &sprite{},
 		icons:          make(map[string]icon),

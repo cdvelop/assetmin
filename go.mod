@@ -1,8 +1,13 @@
 module github.com/cdvelop/assetmin
 
-go 1.22.0
+go 1.23.0
 
-require github.com/tdewolff/minify/v2 v2.23.1
+toolchain go1.23.8
+
+require (
+	github.com/tdewolff/minify/v2 v2.23.1
+	golang.org/x/net v0.39.0
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
