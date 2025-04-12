@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/stretchr/testify/require"
@@ -189,4 +190,69 @@ func (env *TestEnvironment) TestFileCRUDOperations(fileExtension string) {
 	finalOutputContent, err := os.ReadFile(outputPath)
 	require.NoError(env.t, err, fmt.Sprintf("No se pudo leer el archivo %s después de eliminar", outputPath))
 	require.NotContains(env.t, string(finalOutputContent), "Updated content", "El contenido eliminado no debería estar presente")
+}
+
+// TestThemePriority tests that files in 'theme' folder appear before files in 'modules' folder
+func (env *TestEnvironment) TestThemePriority(fileExtension string) {
+	// Determine the file type and appropriate output path
+	var outputPath string
+	var fileType string
+
+	switch fileExtension {
+	case ".js":
+		outputPath = env.MainJsPath
+		fileType = "JS"
+	case ".css":
+		outputPath = env.MainCssPath
+		fileType = "CSS"
+	default:
+		env.t.Fatalf("Unsupported file extension: %s", fileExtension)
+	}
+
+	env.CreateModulesDir()
+	env.CreateThemeDir()
+
+	// 1. Create file in modules directory first
+	modulesFileName := fmt.Sprintf("modules-file%s", fileExtension)
+	modulesFilePath := filepath.Join(env.ModulesDir, modulesFileName)
+
+	var modulesContent []byte
+	var themeContent []byte
+
+	if fileExtension == ".js" {
+		modulesContent = []byte("console.log('Content from modules');")
+		themeContent = []byte("console.log('Content from theme');")
+	} else {
+		modulesContent = []byte(".modules { color: blue; content: 'Content from modules'; }")
+		themeContent = []byte(".theme { color: red; content: 'Content from theme'; }")
+	}
+
+	require.NoError(env.t, os.WriteFile(modulesFilePath, modulesContent, 0644))
+	require.NoError(env.t, env.AssetsHandler.NewFileEvent(modulesFileName, fileExtension, modulesFilePath, "create"))
+
+	// 2. Create file in theme directory second
+	themeFileName := fmt.Sprintf("theme-file%s", fileExtension)
+	themeFilePath := filepath.Join(env.ThemeDir, themeFileName)
+
+	require.NoError(env.t, os.WriteFile(themeFilePath, themeContent, 0644))
+	require.NoError(env.t, env.AssetsHandler.NewFileEvent(themeFileName, fileExtension, themeFilePath, "create"))
+
+	// Verify the output file exists
+	_, err := os.Stat(outputPath)
+	require.NoError(env.t, err, fmt.Sprintf("The output file was not created for %s", fileType))
+
+	// Read the output file content
+	content, err := os.ReadFile(outputPath)
+	require.NoError(env.t, err, fmt.Sprintf("Failed to read the output file for %s", fileType))
+	contentStr := string(content)
+
+	// Verify that both contents are present
+	require.Contains(env.t, contentStr, "Content from modules", "El contenido de modules no está presente")
+	require.Contains(env.t, contentStr, "Content from theme", "El contenido de theme no está presente")
+
+	// Verify that theme content appears before modules content
+	themeIndex := strings.Index(contentStr, "Content from theme")
+	modulesIndex := strings.Index(contentStr, "Content from modules")
+	require.Less(env.t, themeIndex, modulesIndex,
+		fmt.Sprintf("The theme content should appear before the modules content in %s", fileType))
 }

@@ -72,4 +72,22 @@ func TestAssetScenario(t *testing.T) {
 		env.TestConcurrentFileProcessing(".css", 5)
 		env.CleanDirectory()
 	})
+
+	t.Run("uc05_theme_priority", func(t *testing.T) {
+		// En este caso probamos que el contenido de los archivos en la carpeta 'theme'
+		// aparezcan antes que los archivos de la carpeta 'modulos' en el archivo de salida
+		env := setupTestEnv("uc05_theme_priority", t)
+
+		// Probar prioridad de theme para archivos JS
+		t.Run("js_theme_priority", func(t *testing.T) {
+			env.TestThemePriority(".js")
+		})
+
+		// Probar prioridad de theme para archivos CSS
+		t.Run("css_theme_priority", func(t *testing.T) {
+			env.TestThemePriority(".css")
+		})
+
+		env.CleanDirectory()
+	})
 }
