@@ -1,6 +1,7 @@
 package assetmin
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -90,4 +91,79 @@ func TestAssetScenario(t *testing.T) {
 
 		env.CleanDirectory()
 	})
+
+	t.Run("uc06_event_based_compilation", func(t *testing.T) {
+		// Este caso prueba el comportamiento cuando el archivo main.js/css ya existe:
+		// - Si se recibe un evento 'create', no se debe actualizar el contenido del archivo main
+		// - Solo se actualiza el contenido cuando se reciben eventos 'write' o 'delete'
+		// Este comportamiento evita compilaciones innecesarias cuando ya existe una versión compilada
+		env := setupTestEnv("uc06_event_based_compilation", t)
+
+		// Configuramos WriteOnDisk=false para simular que el archivo main ya existe
+		// y que no se debe escribir al disco hasta recibir un evento write/delete
+
+		// Probar comportamiento para archivos JS
+		t.Run("js_event_behavior", func(t *testing.T) {
+			env.AssetsHandler.WriteOnDisk = false
+			env.TestEventBasedCompilation(".js")
+		})
+
+		// Probar comportamiento para archivos CSS
+		t.Run("css_event_behavior", func(t *testing.T) {
+			env.AssetsHandler.WriteOnDisk = false
+			env.TestEventBasedCompilation(".css")
+		})
+
+		env.CleanDirectory()
+	})
+}
+
+// TestEventBasedCompilation prueba el comportamiento de compilación basado en eventos
+// cuando el archivo main ya existe (WriteOnDisk=false):
+// - Los eventos 'create' no deben actualizar el archivo main
+// - Solo los eventos 'write' o 'delete' deben actualizar el archivo main
+func (env *TestEnvironment) TestEventBasedCompilation(fileExtension string) {
+	// Determinar los valores según la extensión del archivo
+	var fileName, fileContent, expectedContent string
+	var mainPath string
+
+	if fileExtension == ".js" {
+		fileName = "script1.js"
+		fileContent = "console.log('Initial JS content');"
+		expectedContent = "Initial JS content"
+		mainPath = env.MainJsPath
+	} else if fileExtension == ".css" {
+		fileName = "style1.css"
+		fileContent = "body { color: red; }"
+		expectedContent = "body { color: red; }"
+		mainPath = env.MainCssPath
+	}
+
+	// Crear el archivo de prueba
+	filePath := filepath.Join(env.BaseDir, fileName)
+	require.NoError(env.t, os.WriteFile(filePath, []byte(fileContent), 0644))
+
+	// Evento CREATE: No debería actualizar el archivo main porque WriteOnDisk=false
+	require.NoError(env.t, env.AssetsHandler.NewFileEvent(fileName, fileExtension, filePath, "create"))
+
+	// Verificar que el archivo main NO fue creado todavía
+	_, err := os.Stat(mainPath)
+	require.Error(env.t, err, fmt.Sprintf("El archivo main%s no debería existir después de un evento create", fileExtension))
+
+	// Evento WRITE: Ahora SÍ debería actualizar el archivo main
+	require.NoError(env.t, env.AssetsHandler.NewFileEvent(fileName, fileExtension, filePath, "write"))
+
+	// Verificar que ahora el archivo main existe y contiene el contenido esperado
+	require.FileExists(env.t, mainPath, fmt.Sprintf("El archivo main%s debería existir después de un evento write", fileExtension))
+	content, err := os.ReadFile(mainPath)
+	require.NoError(env.t, err, fmt.Sprintf("No se pudo leer el archivo main%s", fileExtension))
+	require.Contains(env.t, string(content), expectedContent, fmt.Sprintf("El contenido del archivo main%s no es el esperado", fileExtension))
+
+	// Evento DELETE: Debería actualizar el archivo main eliminando el contenido
+	require.NoError(env.t, env.AssetsHandler.NewFileEvent(fileName, fileExtension, filePath, "delete"))
+
+	// El archivo main debería seguir existiendo pero sin el contenido del archivo eliminado
+	content, err = os.ReadFile(mainPath)
+	require.NoError(env.t, err, fmt.Sprintf("No se pudo leer el archivo main%s", fileExtension))
+	require.NotContains(env.t, string(content), expectedContent, fmt.Sprintf("El contenido eliminado no debería estar en main%s", fileExtension))
 }
