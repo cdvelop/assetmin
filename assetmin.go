@@ -53,7 +53,7 @@ type fileHandler struct {
 	contentMiddle []*contentFile //eg: files from modules folder
 	contentClose  []*contentFile // eg: files js from testin
 
-	customContentProcessor func(content []byte, event string) error // Custom processor function
+	customFileProcessor func(event string, f *contentFile) error // Custom processor function
 
 }
 
@@ -66,14 +66,15 @@ type contentFile struct {
 // NewFileHandler creates a new fileHandler with the specified parameters
 func NewFileHandler(outputName, mediaType string, ac *AssetConfig, initCode func() (string, error)) *fileHandler {
 	handler := &fileHandler{
-		fileOutputName: outputName,
-		outputPath:     filepath.Join(ac.WebFilesFolder(), outputName),
-		mediatype:      mediaType,
-		initCode:       initCode,
-		themeFolder:    ac.ThemeFolder(),
-		contentOpen:    []*contentFile{},
-		contentMiddle:  []*contentFile{},
-		contentClose:   []*contentFile{},
+		fileOutputName:      outputName,
+		outputPath:          filepath.Join(ac.WebFilesFolder(), outputName),
+		mediatype:           mediaType,
+		initCode:            initCode,
+		themeFolder:         ac.ThemeFolder(),
+		contentOpen:         []*contentFile{},
+		contentMiddle:       []*contentFile{},
+		contentClose:        []*contentFile{},
+		customFileProcessor: nil, // Default to nil
 	}
 
 	return handler

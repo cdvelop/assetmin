@@ -53,7 +53,7 @@ func (h *fileHandler) UpdateContent(filePath, event string, f *contentFile) (err
 
 		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {
 			(*filesToUpdate)[idx] = f
-		} else {
+		} else { // si no existe lo agregamos
 			*filesToUpdate = append(*filesToUpdate, f)
 		}
 
@@ -66,8 +66,8 @@ func (h *fileHandler) UpdateContent(filePath, event string, f *contentFile) (err
 	}
 
 	// If a custom processor is provided, use it for content-specific processing
-	if h.customContentProcessor != nil && len(f.content) > 0 {
-		err = h.customContentProcessor(f.content, event)
+	if h.customFileProcessor != nil && len(f.content) > 0 {
+		err = h.customFileProcessor(event, f)
 	}
 
 	return
