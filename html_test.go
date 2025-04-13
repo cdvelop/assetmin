@@ -32,8 +32,11 @@ func createTestHtmlModules(t *testing.T, dir string) []string {
 // funciona correctamente, utilizando contentOpen para la apertura del HTML,
 // contentMiddle para los módulos HTML y contentClose para el cierre.
 func TestHtmlModulesIntegration(t *testing.T) {
-	t.Run("uc09_html_modules_integration", func(t *testing.T) {
-		env := setupTestEnv("uc09_html_modules_integration", t)
+	t.Run("uc09_html_modules_integration_without_index", func(t *testing.T) {
+		// este test verifica que actualicen modulos html cunando no existe un documento html
+		// principal. En este caso, el archivo index.html no existe y se espera que se genere uno por defecto
+
+		env := setupTestEnv("uc09_html_modules_integration_without_index", t)
 
 		// Crear un directorio de prueba para módulos HTML
 		env.CreateModulesDir()
@@ -78,15 +81,6 @@ func TestHtmlModulesIntegration(t *testing.T) {
 		// El módulo eliminado no debería estar presente
 		assert.False(t, strings.Contains(htmlContent, "Test Module 1"), "No debería contener el módulo 1 eliminado")
 		assert.True(t, strings.Contains(htmlContent, "Test Module 2"), "Debería seguir conteniendo el módulo 2")
-
-		env.CleanDirectory()
-	})
-}
-
-// TestHtmlStructure prueba que la estructura HTML sigue el formato esperado con secciones open, middle y close
-func TestHtmlStructure(t *testing.T) {
-	t.Run("uc10_html_structure", func(t *testing.T) {
-		env := setupTestEnv("uc10_html_structure", t)
 
 		env.CleanDirectory()
 	})

@@ -1,14 +1,14 @@
 package assetmin
 
 type htmlHandler struct {
-	*fileHandler
+	*asset
 }
 
-func NewHtmlHandler(ac *AssetConfig) *fileHandler {
+func NewHtmlHandler(ac *AssetConfig) *asset {
 	h := NewFileHandler(htmlMainFileName, "text/html", ac, nil)
 
 	hh := &htmlHandler{
-		fileHandler: h,
+		asset: h,
 	}
 	// Configurar el procesador personalizado para manejar los módulos HTML
 	h.customFileProcessor = hh.processModuleFile

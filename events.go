@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, content []byte) (*fileHandler, error) {
+func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, content []byte) (*asset, error) {
 	file := &contentFile{
 		path:    filePath,
 		content: content,
@@ -38,7 +38,7 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 }
 
 // assetHandlerFiles ej &mainJsHandler, &mainStyleCssHandler
-func (h *fileHandler) UpdateContent(filePath, event string, f *contentFile) (err error) {
+func (h *asset) UpdateContent(filePath, event string, f *contentFile) (err error) {
 
 	// por defecto los archivos de destino son contenido comun eg: modulos, archivos sueltos
 	filesToUpdate := &h.contentMiddle
@@ -132,6 +132,7 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 	}
 	// c.Print("DEBUG:", "writing "+extension+" to disk...")
 
+	// file handler content to write to disk
 	var buf bytes.Buffer
 
 	if fh.initCode != nil {
@@ -196,7 +197,7 @@ func (c *AssetMin) startCodeJS() (out string, err error) {
 }
 
 // clear memory files
-func (f *fileHandler) ClearMemoryFiles() {
+func (f *asset) ClearMemoryFiles() {
 	f.contentOpen = []*contentFile{}
 	f.contentMiddle = []*contentFile{}
 	f.contentClose = []*contentFile{}

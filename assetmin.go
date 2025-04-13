@@ -24,11 +24,11 @@ const (
 type AssetMin struct {
 	mu sync.Mutex // Added mutex for synchronization
 	*AssetConfig
-	mainStyleCssHandler *fileHandler
-	mainJsHandler       *fileHandler
-	spriteSvgHandler    *fileHandler
-	indexHtmlHandler    *fileHandler
-	// indexHtmlHandler *fileHandler
+	mainStyleCssHandler *asset
+	mainJsHandler       *asset
+	spriteSvgHandler    *asset
+	indexHtmlHandler    *asset
+	// indexHtmlHandler *asset
 	min *minify.M
 
 	WriteOnDisk bool // Indica si se debe escribir en disco
@@ -41,31 +41,9 @@ type AssetConfig struct {
 	GetRuntimeInitializerJS func() (string, error) // javascript code to initialize the wasm or other handlers
 }
 
-// represents a file handler for processing and minifying assets
-type fileHandler struct {
-	fileOutputName string                 // eg: main.js,style.css,index.html,sprite.svg
-	outputPath     string                 // full path to output file eg: web/public/main.js
-	mediatype      string                 // eg: "text/html", "text/css", "image/svg+xml"
-	initCode       func() (string, error) // eg js: "console.log('hello world')". eg: css: "body{color:red}" eg: html: "<html></html>". eg: svg: "<svg></svg>"
-	themeFolder    string                 // eg: web/theme
-
-	contentOpen   []*contentFile // eg: files from theme folder
-	contentMiddle []*contentFile //eg: files from modules folder
-	contentClose  []*contentFile // eg: files js from testin
-
-	customFileProcessor func(event string, f *contentFile) error // Custom processor function
-
-}
-
-// contentFile represents a file with its path and content
-type contentFile struct {
-	path    string // eg: modules/module1/file.js
-	content []byte /// eg: "console.log('hello world')"
-}
-
-// NewFileHandler creates a new fileHandler with the specified parameters
-func NewFileHandler(outputName, mediaType string, ac *AssetConfig, initCode func() (string, error)) *fileHandler {
-	handler := &fileHandler{
+// NewFileHandler creates a new asset with the specified parameters
+func NewFileHandler(outputName, mediaType string, ac *AssetConfig, initCode func() (string, error)) *asset {
+	handler := &asset{
 		fileOutputName:      outputName,
 		outputPath:          filepath.Join(ac.WebFilesFolder(), outputName),
 		mediatype:           mediaType,

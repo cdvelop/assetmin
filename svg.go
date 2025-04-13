@@ -1,6 +1,6 @@
 package assetmin
 
-func NewSvgHandler(ac *AssetConfig) *fileHandler {
+func NewSvgHandler(ac *AssetConfig) *asset {
 	svgh := NewFileHandler(svgMainFileName, "image/svg+xml", ac, nil)
 
 	// Add the open tags to contentOpen
