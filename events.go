@@ -43,6 +43,8 @@ func (fh *fileHandler) UpdateContent(filePath, event string, newFile *assetFile)
 	// Keeping it here for backward compatibility
 	filesToUpdate := &fh.moduleFiles
 
+	// Corregir la lógica para identificar correctamente archivos de tema
+	// Verificamos si el path contiene "theme" en cualquier parte de la ruta
 	if strings.Contains(filePath, fh.themeFolder) {
 		filesToUpdate = &fh.themeFiles
 	}

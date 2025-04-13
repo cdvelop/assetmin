@@ -57,13 +57,13 @@ type assetFile struct {
 }
 
 // NewFileHandler creates a new fileHandler with the specified parameters
-func NewFileHandler(outputName, mediaType string, startCodeFn func() (string, error), webFilesFolder string) *fileHandler {
+func NewFileHandler(outputName, mediaType string, ac *AssetConfig) *fileHandler {
 	handler := &fileHandler{
 		fileOutputName: outputName,
-		outputPath:     filepath.Join(webFilesFolder, outputName),
+		outputPath:     filepath.Join(ac.WebFilesFolder(), outputName),
 		mediatype:      mediaType,
-		startCode:      startCodeFn,
-		themeFolder:    webFilesFolder,
+		startCode:      ac.GetRuntimeInitializerJS,
+		themeFolder:    ac.ThemeFolder(),
 		themeFiles:     []*assetFile{},
 		moduleFiles:    []*assetFile{},
 	}
@@ -71,13 +71,13 @@ func NewFileHandler(outputName, mediaType string, startCodeFn func() (string, er
 	return handler
 }
 
-func NewAssetMin(cfg *AssetConfig) *AssetMin {
+func NewAssetMin(ac *AssetConfig) *AssetMin {
 	c := &AssetMin{
-		AssetConfig: cfg,
-		cssHandler:  NewFileHandler(cssMainFileName, "text/css", nil, cfg.WebFilesFolder()),
-		jsHandler:   NewFileHandler(jsMainFileName, "text/javascript", nil, cfg.WebFilesFolder()),
-		svgHandler:  NewSvgHandler(cfg.WebFilesFolder()),
-		htmlHandler: NewHtmlHandler(cfg.WebFilesFolder()),
+		AssetConfig: ac,
+		cssHandler:  NewFileHandler(cssMainFileName, "text/css", ac),
+		jsHandler:   NewFileHandler(jsMainFileName, "text/javascript", ac),
+		svgHandler:  NewSvgHandler(ac),
+		htmlHandler: NewHtmlHandler(ac),
 		min:         minify.New(),
 		WriteOnDisk: false, // Default to false
 	}

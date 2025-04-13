@@ -26,9 +26,9 @@ type htmlHandler struct {
 	deleteBodyNodes []*html.Node
 }
 
-func NewHtmlHandler(WebFilesFolder string) *htmlHandler {
+func NewHtmlHandler(ac *AssetConfig) *htmlHandler {
 	h := &htmlHandler{
-		fileHandler: NewFileHandler(htmlMainFileName, "text/html", nil, WebFilesFolder),
+		fileHandler: NewFileHandler(htmlMainFileName, "text/html", ac),
 		appName:     "myapp",
 		appVersion:  "1.0.0",
 	}

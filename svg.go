@@ -14,9 +14,9 @@ type svgHandler struct {
 	icons  map[string]icon
 }
 
-func NewSvgHandler(WebFilesFolder string) *svgHandler {
+func NewSvgHandler(ac *AssetConfig) *svgHandler {
 	svgh := &svgHandler{
-		fileHandler: NewFileHandler(svgMainFileName, "image/svg+xml", nil, WebFilesFolder),
+		fileHandler: NewFileHandler(svgMainFileName, "image/svg+xml", ac),
 		sprite:      &sprite{},
 		icons:       make(map[string]icon),
 	}
