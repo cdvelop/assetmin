@@ -1,30 +1,25 @@
 package assetmin
 
 import (
+	"bytes"
 	"encoding/xml"
 	"errors"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
 type svgHandler struct {
-	fileOutputName string // eg:  svgMainFileName
-	outputPath     string // eg:  "public/sprite.svg"
-	mediatype      string // eg:  "image/svg+xml"
-	sprite         *sprite
-	icons          map[string]icon
+	*fileHandler
+	sprite *sprite
+	icons  map[string]icon
 }
 
 func NewSvgHandler(WebFilesFolder string) *svgHandler {
 	svgh := &svgHandler{
-		fileOutputName: svgMainFileName,
-		mediatype:      "image/svg+xml",
-		sprite:         &sprite{},
-		icons:          make(map[string]icon),
+		fileHandler: NewFileHandler(svgMainFileName, "image/svg+xml", nil, WebFilesFolder),
+		sprite:      &sprite{},
+		icons:       make(map[string]icon),
 	}
-
-	svgh.outputPath = filepath.Join(WebFilesFolder, svgh.fileOutputName)
 
 	return svgh
 }
@@ -61,19 +56,21 @@ type path struct {
 }
 
 // event: create, remove, write, rename
-func (h *svgHandler) processContent(content []byte, action string) error {
-	contentStr := string(content)
+func (h *svgHandler) UpdateContent(filePath, event string, f *assetFile) error {
+
+	contentStr := string(f.content)
 	if strings.Contains(contentStr, "<svg") {
-		return h.processSprite(contentStr, action)
+		return h.processSprite(contentStr, event)
 	} else if strings.Contains(contentStr, "<symbol") {
-		return h.processSymbol(contentStr, action)
+		return h.processSymbol(contentStr, event)
 	}
 	return errors.New("contenido no reconocido")
+
 }
 
-func (h *svgHandler) processSprite(content, action string) error {
+func (h *svgHandler) processSprite(content, event string) error {
 
-	if action == "delete" {
+	if event == "remove" {
 		return os.Remove(h.outputPath)
 	}
 
@@ -87,13 +84,13 @@ func (h *svgHandler) processSprite(content, action string) error {
 	return nil
 }
 
-func (h *svgHandler) processSymbol(content, action string) error {
+func (h *svgHandler) processSymbol(content, event string) error {
 	var sym symbol
 	if err := xml.Unmarshal([]byte(content), &sym); err != nil {
 		return err
 	}
 
-	if action == "delete" {
+	if event == "remove" {
 		delete(h.icons, sym.ID)
 		// h.writeToFile()
 		return nil
@@ -107,4 +104,35 @@ func (h *svgHandler) processSymbol(content, action string) error {
 	// fmt.Println("simbolo", sym.ID, sym.ViewBox)
 
 	return nil
+}
+
+// WriteContent implements the AssetHandler interface for svgHandler
+func (h *svgHandler) WriteContent() error {
+	// Implement SVG sprite generation and writing
+	// This is a placeholder - you'll need to implement the actual SVG sprite generation
+	var buf bytes.Buffer
+
+	// Create the SVG sprite XML structure
+	h.sprite.Xmlns = "http://www.w3.org/2000/svg"
+	h.sprite.Role = "img"
+	h.sprite.Hidden = "true"
+	h.sprite.Focus = "false"
+	h.sprite.Class = "svg-sprite"
+
+	// Add all symbols to the sprite
+	h.sprite.Defs.Symbols = make([]symbol, 0, len(h.icons))
+	for _, icon := range h.icons {
+		h.sprite.Defs.Symbols = append(h.sprite.Defs.Symbols, icon.symbol)
+	}
+
+	// Marshal the sprite to XML
+	xmlData, err := xml.MarshalIndent(h.sprite, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	buf.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
+	buf.Write(xmlData)
+
+	return FileWrite(h.outputPath, buf)
 }

@@ -18,31 +18,40 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 
 	switch extension {
 	case ".css":
-		c.updateAsset(filePath, event, c.cssHandler, file)
+		c.cssHandler.UpdateContent(filePath, event, file)
 		return c.cssHandler, nil
 
 	case ".js":
-		c.updateAsset(filePath, event, c.jsHandler, file)
+		c.jsHandler.UpdateContent(filePath, event, file)
 		return c.jsHandler, nil
+
+	case ".svg":
+		c.svgHandler.UpdateContent(filePath, event, file)
+		return c.svgHandler.fileHandler, nil
+
+	case ".html":
+		c.htmlHandler.UpdateContent(filePath, event, file)
+		return c.htmlHandler.fileHandler, nil
 	}
 
 	return nil, errors.New("UpdateFileContentInMemory extension: " + extension + " not found " + filePath)
 }
 
 // assetHandlerFiles ej &jsHandler, &cssHandler
-func (c *AssetMin) updateAsset(filePath, event string, assetHandler *fileHandler, newFile *assetFile) {
+func (fh *fileHandler) UpdateContent(filePath, event string, newFile *assetFile) {
+	// This function is now handled by the UpdateContent method in each handler
+	// Keeping it here for backward compatibility
+	filesToUpdate := &fh.moduleFiles
 
-	filesToUpdate := &assetHandler.moduleFiles
-
-	if strings.Contains(filePath, c.ThemeFolder()) {
-		filesToUpdate = &assetHandler.themeFiles
+	if strings.Contains(filePath, fh.themeFolder) {
+		filesToUpdate = &fh.themeFiles
 	}
 	if event == "remove" || event == "delete" {
-		if idx := c.findFileIndex(*filesToUpdate, filePath); idx != -1 {
+		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {
 			*filesToUpdate = slices.Delete((*filesToUpdate), idx, idx+1)
 		}
 	} else {
-		if idx := c.findFileIndex(*filesToUpdate, filePath); idx != -1 {
+		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {
 			(*filesToUpdate)[idx] = newFile
 		} else {
 			*filesToUpdate = append(*filesToUpdate, newFile)
@@ -50,7 +59,7 @@ func (c *AssetMin) updateAsset(filePath, event string, assetHandler *fileHandler
 	}
 }
 
-func (c *AssetMin) findFileIndex(files []*assetFile, filePath string) int {
+func findFileIndex(files []*assetFile, filePath string) int {
 	for i, f := range files {
 		if f.path == filePath {
 			return i
@@ -152,13 +161,15 @@ func (c *AssetMin) UnobservedFiles() []string {
 	return []string{
 		c.cssHandler.outputPath,
 		c.jsHandler.outputPath,
+		c.svgHandler.outputPath,
+		c.htmlHandler.outputPath,
 	}
 }
 
 func (c *AssetMin) startCodeJS() (out string, err error) {
 	out = "'use strict';"
 
-	js, err := c.JavascriptForInitializing() // wasm js code
+	js, err := c.GetRuntimeInitializerJS() // wasm js code
 	if err != nil {
 		return "", errors.New("startCodeJS " + err.Error())
 	}
@@ -180,9 +191,11 @@ func (c *AssetMin) isOutputPath(filePath string) bool {
 	cssOutputPath := filepath.Clean(c.cssHandler.outputPath)
 	jsOutputPath := filepath.Clean(c.jsHandler.outputPath)
 	svgOutputPath := filepath.Clean(c.svgHandler.outputPath)
+	htmlHandlerOutputPath := filepath.Clean(c.htmlHandler.outputPath)
 
 	return normalizedFilePath == cssOutputPath ||
 		normalizedFilePath == jsOutputPath ||
-		normalizedFilePath == svgOutputPath
+		normalizedFilePath == svgOutputPath ||
+		normalizedFilePath == htmlHandlerOutputPath
 
 }

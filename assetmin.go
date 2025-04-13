@@ -35,16 +35,17 @@ type AssetMin struct {
 }
 
 type AssetConfig struct {
-	ThemeFolder               func() string          // eg: web/theme
-	WebFilesFolder            func() string          // eg: web/static, web/public, web/assets
-	Print                     func(messages ...any)  // eg: fmt.Println
-	JavascriptForInitializing func() (string, error) // javascript code to initialize the wasm or other handlers
+	ThemeFolder             func() string          // eg: web/theme
+	WebFilesFolder          func() string          // eg: web/static, web/public, web/assets
+	Print                   func(messages ...any)  // eg: fmt.Println
+	GetRuntimeInitializerJS func() (string, error) // javascript code to initialize the wasm or other handlers
 }
 
 type fileHandler struct {
-	fileOutputName string                 // eg: main.js,style.css
+	fileOutputName string                 // eg: main.js,style.css,index.html,sprite.svg
 	outputPath     string                 // full path to output file eg: web/public/main.js
 	startCode      func() (string, error) // eg: "console.log('hello world')"
+	themeFolder    string                 // eg: web/theme
 	themeFiles     []*assetFile           // files from theme folder
 	moduleFiles    []*assetFile           // files from modules folder
 	mediatype      string                 // eg: "text/html", "text/css", "image/svg+xml"
@@ -55,22 +56,28 @@ type assetFile struct {
 	content []byte /// eg: "console.log('hello world')"
 }
 
+// NewFileHandler creates a new fileHandler with the specified parameters
+func NewFileHandler(outputName, mediaType string, startCodeFn func() (string, error), webFilesFolder string) *fileHandler {
+	handler := &fileHandler{
+		fileOutputName: outputName,
+		outputPath:     filepath.Join(webFilesFolder, outputName),
+		mediatype:      mediaType,
+		startCode:      startCodeFn,
+		themeFolder:    webFilesFolder,
+		themeFiles:     []*assetFile{},
+		moduleFiles:    []*assetFile{},
+	}
+
+	return handler
+}
+
 func NewAssetMin(cfg *AssetConfig) *AssetMin {
 	c := &AssetMin{
 		AssetConfig: cfg,
-		cssHandler: &fileHandler{
-			fileOutputName: cssMainFileName,
-			themeFiles:     []*assetFile{},
-			moduleFiles:    []*assetFile{},
-			mediatype:      "text/css",
-		},
-		jsHandler: &fileHandler{
-			fileOutputName: jsMainFileName,
-			themeFiles:     []*assetFile{},
-			moduleFiles:    []*assetFile{},
-			mediatype:      "text/javascript",
-		},
+		cssHandler:  NewFileHandler(cssMainFileName, "text/css", nil, cfg.WebFilesFolder()),
+		jsHandler:   NewFileHandler(jsMainFileName, "text/javascript", nil, cfg.WebFilesFolder()),
 		svgHandler:  NewSvgHandler(cfg.WebFilesFolder()),
+		htmlHandler: NewHtmlHandler(cfg.WebFilesFolder()),
 		min:         minify.New(),
 		WriteOnDisk: false, // Default to false
 	}
@@ -82,9 +89,7 @@ func NewAssetMin(cfg *AssetConfig) *AssetMin {
 
 	c.jsHandler.startCode = c.startCodeJS
 
-	// Initialize output paths
-	c.cssHandler.outputPath = filepath.Join(c.WebFilesFolder(), c.cssHandler.fileOutputName)
-	c.jsHandler.outputPath = filepath.Join(c.WebFilesFolder(), c.jsHandler.fileOutputName)
+	// No need to initialize output paths again as NewFileHandler already does this
 	// Ensure output directories exist
 	c.EnsureOutputDirectoryExists()
 

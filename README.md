@@ -51,7 +51,7 @@ func main() {
 		},
 		
 		// Optional JavaScript initialization code
-		JavascriptForInitializing: func() (string, error) {
+		GetRuntimeInitializerJS: func() (string, error) {
 			return "console.log('App initialized!');", nil
 		},
 	}
@@ -96,7 +96,7 @@ Processes a file event (create/write).
 | `ThemeFolder` | Function that returns the path to your theme directory |
 | `WebFilesFolder` | Function that returns the path to your public output directory |
 | `Print` | Function for logging messages |
-| `JavascriptForInitializing` | Function that returns initialization JavaScript code |
+| `GetRuntimeInitializerJS` | Function that returns initialization JavaScript code |
 
 ## 🤝 Contributing
 

@@ -17,6 +17,7 @@ type TestEnvironment struct {
 	MainJsPath    string
 	MainCssPath   string
 	MainSvgPath   string
+	MainHtmlPath  string
 	AssetsHandler *AssetMin
 	t             *testing.T
 }
@@ -54,7 +55,7 @@ func setupTestEnv(testCase string, t *testing.T) *TestEnvironment {
 		Print: func(messages ...any) {
 			t.Log(messages...)
 		},
-		JavascriptForInitializing: func() (string, error) {
+		GetRuntimeInitializerJS: func() (string, error) {
 			return "", nil
 		},
 	}
@@ -75,6 +76,7 @@ func setupTestEnv(testCase string, t *testing.T) *TestEnvironment {
 		MainJsPath:    assetsHandler.jsHandler.outputPath,
 		MainCssPath:   assetsHandler.cssHandler.outputPath,
 		MainSvgPath:   assetsHandler.svgHandler.outputPath,
+		MainHtmlPath:  assetsHandler.htmlHandler.outputPath,
 		AssetsHandler: assetsHandler,
 		t:             t,
 	}

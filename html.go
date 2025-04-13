@@ -4,20 +4,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"golang.org/x/net/html"
 )
 
 type htmlHandler struct {
-	fileOutputName string // ej:  "htmlMainFileName"
-	outputPath     string // ej: ./web/public/htmlMainFileName
-	mediatype      string // ej:  "text/html"
-	appName        string // ej: "myapp"
-	appVersion     string // ej: "1.0.0"
+	*fileHandler
 
-	registeredFiles map[string]*file
+	appName    string // ej: "myapp"
+	appVersion string // ej: "1.0.0"
 
 	index *html.Node
 
@@ -32,12 +28,9 @@ type htmlHandler struct {
 
 func NewHtmlHandler(WebFilesFolder string) *htmlHandler {
 	h := &htmlHandler{
-		fileOutputName:  htmlMainFileName,
-		outputPath:      filepath.Join(WebFilesFolder, htmlMainFileName),
-		mediatype:       "text/html",
-		appName:         "myapp",
-		appVersion:      "1.0.0",
-		registeredFiles: make(map[string]*file),
+		fileHandler: NewFileHandler(htmlMainFileName, "text/html", nil, WebFilesFolder),
+		appName:     "myapp",
+		appVersion:  "1.0.0",
 	}
 	return h
 
@@ -134,19 +127,19 @@ func (h *htmlHandler) modifyAttributes(n *html.Node) {
 }
 
 // event: create, remove, write, rename
-func (h *htmlHandler) processContent(content []byte, filePath, action string) error {
+func (h *htmlHandler) UpdateContent(filePath, event string, f *assetFile) error {
 
-	var e = "processContent Html " + action
-	if len(content) == 0 {
+	var e = "processContent Html " + event
+	if len(f.content) == 0 {
 		return nil
 	}
 
 	fmt.Println("Compilando HTML..." + filePath)
 
 	var err error
-	if action == "create" || action == "update" {
+	if event == "create" || event == "update" {
 		h.head = nil
-		h.index, err = html.Parse(bytes.NewReader(content))
+		h.index, err = html.Parse(bytes.NewReader(f.content))
 		if err != nil {
 			return errors.New(e + err.Error())
 		}
