@@ -26,7 +26,7 @@ type AssetMin struct {
 	*AssetConfig
 	mainStyleCssHandler *fileHandler
 	mainJsHandler       *fileHandler
-	spriteSvgHandler    *spriteSvgHandler
+	spriteSvgHandler    *fileHandler
 	indexHtmlHandler    *indexHtmlHandler
 	// indexHtmlHandler *fileHandler
 	min *minify.M
@@ -41,8 +41,6 @@ type AssetConfig struct {
 	GetRuntimeInitializerJS func() (string, error) // javascript code to initialize the wasm or other handlers
 }
 
-type customContentProcessor func(content []byte, event string) ([]byte, error)
-
 // represents a file handler for processing and minifying assets
 type fileHandler struct {
 	fileOutputName string                 // eg: main.js,style.css,index.html,sprite.svg
@@ -55,7 +53,7 @@ type fileHandler struct {
 	contentMiddle []*contentFile //eg: files from modules folder
 	contentClose  []*contentFile // eg: files js from testin
 
-	processor customContentProcessor // Custom processor function
+	customContentProcessor func(content []byte, event string) error // Custom processor function
 
 }
 

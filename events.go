@@ -27,7 +27,7 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 
 	case ".svg":
 		err := c.spriteSvgHandler.UpdateContent(filePath, event, file)
-		return c.spriteSvgHandler.fileHandler, err
+		return c.spriteSvgHandler, err
 
 	case ".html":
 		err := c.indexHtmlHandler.UpdateContent(filePath, event, file)
@@ -38,7 +38,7 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 }
 
 // assetHandlerFiles ej &mainJsHandler, &mainStyleCssHandler
-func (h *fileHandler) UpdateContent(filePath, event string, f *contentFile) error {
+func (h *fileHandler) UpdateContent(filePath, event string, f *contentFile) (err error) {
 
 	// por defecto los archivos de destino son contenido comun eg: modulos, archivos sueltos
 	filesToUpdate := &h.contentMiddle
@@ -66,15 +66,11 @@ func (h *fileHandler) UpdateContent(filePath, event string, f *contentFile) erro
 	}
 
 	// If a custom processor is provided, use it for content-specific processing
-	if h.processor != nil && len(f.content) > 0 {
-		processed, err := h.processor(f.content, event)
-		if err != nil {
-			return err
-		}
-		f.content = processed
+	if h.customContentProcessor != nil && len(f.content) > 0 {
+		err = h.customContentProcessor(f.content, event)
 	}
 
-	return nil
+	return
 }
 
 func findFileIndex(files []*contentFile, filePath string) int {
