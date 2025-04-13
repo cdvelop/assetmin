@@ -2,7 +2,6 @@ package assetmin
 
 import (
 	"os"
-	"path/filepath"
 	"regexp"
 
 	"sync"
@@ -41,28 +40,11 @@ type AssetConfig struct {
 	GetRuntimeInitializerJS func() (string, error) // javascript code to initialize the wasm or other handlers
 }
 
-// NewFileHandler creates a new asset with the specified parameters
-func NewFileHandler(outputName, mediaType string, ac *AssetConfig, initCode func() (string, error)) *asset {
-	handler := &asset{
-		fileOutputName:      outputName,
-		outputPath:          filepath.Join(ac.WebFilesFolder(), outputName),
-		mediatype:           mediaType,
-		initCode:            initCode,
-		themeFolder:         ac.ThemeFolder(),
-		contentOpen:         []*contentFile{},
-		contentMiddle:       []*contentFile{},
-		contentClose:        []*contentFile{},
-		customFileProcessor: nil, // Default to nil
-	}
-
-	return handler
-}
-
 func NewAssetMin(ac *AssetConfig) *AssetMin {
 	c := &AssetMin{
 		AssetConfig:         ac,
-		mainStyleCssHandler: NewFileHandler(cssMainFileName, "text/css", ac, nil),
-		mainJsHandler:       NewFileHandler(jsMainFileName, "text/javascript", ac, ac.GetRuntimeInitializerJS),
+		mainStyleCssHandler: newAssetFile(cssMainFileName, "text/css", ac, nil),
+		mainJsHandler:       newAssetFile(jsMainFileName, "text/javascript", ac, ac.GetRuntimeInitializerJS),
 		spriteSvgHandler:    NewSvgHandler(ac),
 		indexHtmlHandler:    NewHtmlHandler(ac),
 		min:                 minify.New(),
@@ -80,7 +62,7 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 
 	c.mainJsHandler.initCode = c.startCodeJS
 
-	// No need to initialize output paths again as NewFileHandler already does this
+	// No need to initialize output paths again as newAssetFile already does this
 	// Ensure output directories exist
 	c.EnsureOutputDirectoryExists()
 

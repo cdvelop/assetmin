@@ -5,8 +5,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"slices"
-	"strings"
 	"time"
 )
 
@@ -35,51 +33,6 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 	}
 
 	return nil, errors.New("UpdateFileContentInMemory extension: " + extension + " not found " + filePath)
-}
-
-// assetHandlerFiles ej &mainJsHandler, &mainStyleCssHandler
-func (h *asset) UpdateContent(filePath, event string, f *contentFile) (err error) {
-
-	// por defecto los archivos de destino son contenido comun eg: modulos, archivos sueltos
-	filesToUpdate := &h.contentMiddle
-
-	// verificar si es de tema asi actualizamos como archivos apertura
-	if strings.Contains(filePath, h.themeFolder) {
-		filesToUpdate = &h.contentOpen
-	}
-
-	switch event {
-	case "create", "write":
-
-		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {
-			(*filesToUpdate)[idx] = f
-		} else { // si no existe lo agregamos
-			*filesToUpdate = append(*filesToUpdate, f)
-		}
-
-	case "rename": // cuando se renombra un archivo, se crea uno nuevo y se elimina el antiguo
-
-	case "remove", "delete":
-		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {
-			*filesToUpdate = slices.Delete((*filesToUpdate), idx, idx+1)
-		}
-	}
-
-	// If a custom processor is provided, use it for content-specific processing
-	if h.customFileProcessor != nil && len(f.content) > 0 {
-		err = h.customFileProcessor(event, f)
-	}
-
-	return
-}
-
-func findFileIndex(files []*contentFile, filePath string) int {
-	for i, f := range files {
-		if f.path == filePath {
-			return i
-		}
-	}
-	return -1
 }
 
 // event: create, remove, write, rename

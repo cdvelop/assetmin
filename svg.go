@@ -1,7 +1,7 @@
 package assetmin
 
 func NewSvgHandler(ac *AssetConfig) *asset {
-	svgh := NewFileHandler(svgMainFileName, "image/svg+xml", ac, nil)
+	svgh := newAssetFile(svgMainFileName, "image/svg+xml", ac, nil)
 
 	// Add the open tags to contentOpen
 	svgh.contentOpen = append(svgh.contentOpen, &contentFile{

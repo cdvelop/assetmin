@@ -84,4 +84,89 @@ func TestHtmlModulesIntegration(t *testing.T) {
 
 		env.CleanDirectory()
 	})
+
+	t.Run("uc10_html_modules_integration_with_index", func(t *testing.T) {
+		// este test verifica que cuando existe un index.html en el directorio de salida
+		// y se agregan nuevos módulos HTML, estos se deben integrar respetando la estructura existente
+
+		env := setupTestEnv("uc10_html_modules_integration_with_index", t)
+
+		// Crear el directorio público donde estará el index.html
+		env.CreatePublicDir()
+
+		// Crear un index.html existente con una estructura definida
+		existingHtml := `<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Existing Index</title>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+<body>
+    <!-- Contenido existente -->
+    <header>
+        <h1>My Existing Page</h1>
+    </header>
+    <main>
+        <!-- MODULES_PLACEHOLDER -->
+    </main>
+    <footer>
+        <p>Existing footer</p>
+    </footer>
+    <script src="main.js" type="text/javascript"></script>
+</body>
+</html>`
+
+		require.NoError(t, os.WriteFile(env.MainHtmlPath, []byte(existingHtml), 0644))
+		require.FileExists(t, env.MainHtmlPath, "El archivo index.html debe existir antes de iniciar la prueba")
+
+		// Crear un directorio de prueba para módulos HTML
+		env.CreateModulesDir()
+
+		// Crear archivos de módulos HTML individuales
+		modulePaths := createTestHtmlModules(t, env.ModulesDir)
+
+		// Procesar solo el primer módulo
+		modulePath := modulePaths[0]
+		moduleName := filepath.Base(modulePath)
+		require.NoError(t, env.AssetsHandler.NewFileEvent(moduleName, ".html", modulePath, "create"))
+
+		// Verificar que el archivo HTML existe (no debería haberse eliminado)
+		require.FileExists(t, env.MainHtmlPath, "El archivo index.html debe seguir existiendo")
+
+		// Leer el archivo actualizado
+		content, err := os.ReadFile(env.MainHtmlPath)
+		require.NoError(t, err, "Debería poder leer el archivo HTML actualizado")
+
+		// Verificar la estructura del contenido
+		htmlContent := string(content)
+
+		// Verificar que se conservan los elementos originales
+		assert.True(t, strings.Contains(htmlContent, "<title>Existing Index</title>"), "Debe conservar la estructura del head")
+		assert.True(t, strings.Contains(htmlContent, "<h1>My Existing Page</h1>"), "Debe conservar el header existente")
+		assert.True(t, strings.Contains(htmlContent, "<p>Existing footer</p>"), "Debe conservar el footer existente")
+
+		// Verificar que contiene el módulo HTML añadido
+		assert.True(t, strings.Contains(htmlContent, "Test Module 1"), "Debe contener el módulo añadido")
+
+		// Ahora procesamos el segundo módulo
+		modulePath = modulePaths[1]
+		moduleName = filepath.Base(modulePath)
+		require.NoError(t, env.AssetsHandler.NewFileEvent(moduleName, ".html", modulePath, "create"))
+
+		// Leer el archivo actualizado de nuevo
+		content, err = os.ReadFile(env.MainHtmlPath)
+		require.NoError(t, err, "Debería poder leer el archivo HTML re-actualizado")
+		htmlContent = string(content)
+
+		// Verificar que ambos módulos están presentes
+		assert.True(t, strings.Contains(htmlContent, "Test Module 1"), "Debe contener el primer módulo")
+		assert.True(t, strings.Contains(htmlContent, "Test Module 2"), "Debe contener el segundo módulo")
+
+		// Verificar que se conserva la estructura original
+		assert.True(t, strings.Contains(htmlContent, "<header>"), "Debe conservar las etiquetas estructurales")
+		assert.True(t, strings.Contains(htmlContent, "</footer>"), "Debe conservar las etiquetas de cierre")
+
+		// env.CleanDirectory()
+	})
 }
