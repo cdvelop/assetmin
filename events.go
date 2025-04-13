@@ -130,45 +130,20 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 	if !c.WriteOnDisk {
 		return nil
 	}
-	// c.Print("DEBUG:", "writing "+extension+" to disk...")
 
-	// file handler content to write to disk
+	// Process content into a buffer
 	var buf bytes.Buffer
+	fh.WriteContent(&buf)
 
-	if fh.initCode != nil {
-		initCode, err := fh.initCode()
-		if err != nil {
-			return errors.New(e + err.Error())
-		}
-		buf.WriteString(initCode)
-	}
-
-	// Write open content first
-	for _, f := range fh.contentOpen {
-		buf.Write(f.content)
-		buf.WriteString("\n") // Add newline between files
-	}
-
-	// Then write middle content files
-	for _, f := range fh.contentMiddle {
-		buf.Write(f.content)
-		buf.WriteString("\n") // Add newline between files
-	}
-
-	// Then write close content files
-	for _, f := range fh.contentClose {
-		buf.Write(f.content)
-		buf.WriteString("\n") // Add newline between files
-	}
-
-	//  Minify and write the buffer
+	// Minify the content
 	var minifiedBuf bytes.Buffer
 	if err := c.min.Minify(fh.mediatype, &minifiedBuf, &buf); err != nil {
-		return errors.New(e + err.Error())
+		return errors.New(e + " Minification error: " + err.Error())
 	}
-	// c.Print("debug", "writing to disk (minified):", minifiedBuf.String())
+
+	// Write to disk
 	if err := FileWrite(fh.outputPath, minifiedBuf); err != nil {
-		return errors.New(e + err.Error())
+		return errors.New(e + " File write error: " + err.Error())
 	}
 
 	return nil
