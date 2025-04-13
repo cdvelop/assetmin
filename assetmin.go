@@ -91,7 +91,11 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 		WriteOnDisk:         false, // Default to false
 	}
 
-	c.min.AddFunc("text/html", html.Minify)
+	c.min.Add("text/html", &html.Minifier{
+		KeepDocumentTags: true, // para mantener las etiquetas html,head,body. tambien mantiene las etiquetas de cierre
+		KeepEndTags:      true, // preserve all end tags
+	})
+
 	c.min.AddFunc("text/css", css.Minify)
 	c.min.AddFuncRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"), js.Minify)
 	c.min.AddFunc("image/svg+xml", svg.Minify)
