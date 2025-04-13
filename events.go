@@ -18,26 +18,26 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 
 	switch extension {
 	case ".css":
-		c.cssHandler.UpdateContent(filePath, event, file)
-		return c.cssHandler, nil
+		c.mainStyleCssHandler.UpdateContent(filePath, event, file)
+		return c.mainStyleCssHandler, nil
 
 	case ".js":
-		c.jsHandler.UpdateContent(filePath, event, file)
-		return c.jsHandler, nil
+		c.mainJsHandler.UpdateContent(filePath, event, file)
+		return c.mainJsHandler, nil
 
 	case ".svg":
-		c.svgHandler.UpdateContent(filePath, event, file)
-		return c.svgHandler.fileHandler, nil
+		c.spriteSvgHandler.UpdateContent(filePath, event, file)
+		return c.spriteSvgHandler.fileHandler, nil
 
 	case ".html":
-		c.htmlHandler.UpdateContent(filePath, event, file)
-		return c.htmlHandler.fileHandler, nil
+		c.indexHtmlHandler.UpdateContent(filePath, event, file)
+		return c.indexHtmlHandler.fileHandler, nil
 	}
 
 	return nil, errors.New("UpdateFileContentInMemory extension: " + extension + " not found " + filePath)
 }
 
-// assetHandlerFiles ej &jsHandler, &cssHandler
+// assetHandlerFiles ej &mainJsHandler, &mainStyleCssHandler
 func (fh *fileHandler) UpdateContent(filePath, event string, newFile *assetFile) {
 	// This function is now handled by the UpdateContent method in each handler
 	// Keeping it here for backward compatibility
@@ -161,10 +161,10 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 func (c *AssetMin) UnobservedFiles() []string {
 	// Return the full path of the output files to ignore
 	return []string{
-		c.cssHandler.outputPath,
-		c.jsHandler.outputPath,
-		c.svgHandler.outputPath,
-		c.htmlHandler.outputPath,
+		c.mainStyleCssHandler.outputPath,
+		c.mainJsHandler.outputPath,
+		c.spriteSvgHandler.outputPath,
+		c.indexHtmlHandler.outputPath,
 	}
 }
 
@@ -190,10 +190,10 @@ func (f *fileHandler) ClearMemoryFiles() {
 func (c *AssetMin) isOutputPath(filePath string) bool {
 	// Normalize paths for cross-platform comparison
 	normalizedFilePath := filepath.Clean(filePath)
-	cssOutputPath := filepath.Clean(c.cssHandler.outputPath)
-	jsOutputPath := filepath.Clean(c.jsHandler.outputPath)
-	svgOutputPath := filepath.Clean(c.svgHandler.outputPath)
-	htmlHandlerOutputPath := filepath.Clean(c.htmlHandler.outputPath)
+	cssOutputPath := filepath.Clean(c.mainStyleCssHandler.outputPath)
+	jsOutputPath := filepath.Clean(c.mainJsHandler.outputPath)
+	svgOutputPath := filepath.Clean(c.spriteSvgHandler.outputPath)
+	htmlHandlerOutputPath := filepath.Clean(c.indexHtmlHandler.outputPath)
 
 	return normalizedFilePath == cssOutputPath ||
 		normalizedFilePath == jsOutputPath ||

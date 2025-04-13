@@ -8,14 +8,14 @@ import (
 	"strings"
 )
 
-type svgHandler struct {
+type spriteSvgHandler struct {
 	*fileHandler
 	sprite *sprite
 	icons  map[string]icon
 }
 
-func NewSvgHandler(ac *AssetConfig) *svgHandler {
-	svgh := &svgHandler{
+func NewSvgHandler(ac *AssetConfig) *spriteSvgHandler {
+	svgh := &spriteSvgHandler{
 		fileHandler: NewFileHandler(svgMainFileName, "image/svg+xml", ac),
 		sprite:      &sprite{},
 		icons:       make(map[string]icon),
@@ -56,7 +56,7 @@ type path struct {
 }
 
 // event: create, remove, write, rename
-func (h *svgHandler) UpdateContent(filePath, event string, f *assetFile) error {
+func (h *spriteSvgHandler) UpdateContent(filePath, event string, f *assetFile) error {
 
 	contentStr := string(f.content)
 	if strings.Contains(contentStr, "<svg") {
@@ -68,7 +68,7 @@ func (h *svgHandler) UpdateContent(filePath, event string, f *assetFile) error {
 
 }
 
-func (h *svgHandler) processSprite(content, event string) error {
+func (h *spriteSvgHandler) processSprite(content, event string) error {
 
 	if event == "remove" {
 		return os.Remove(h.outputPath)
@@ -84,7 +84,7 @@ func (h *svgHandler) processSprite(content, event string) error {
 	return nil
 }
 
-func (h *svgHandler) processSymbol(content, event string) error {
+func (h *spriteSvgHandler) processSymbol(content, event string) error {
 	var sym symbol
 	if err := xml.Unmarshal([]byte(content), &sym); err != nil {
 		return err
@@ -106,8 +106,8 @@ func (h *svgHandler) processSymbol(content, event string) error {
 	return nil
 }
 
-// WriteContent implements the AssetHandler interface for svgHandler
-func (h *svgHandler) WriteContent() error {
+// WriteContent implements the AssetHandler interface for spriteSvgHandler
+func (h *spriteSvgHandler) WriteContent() error {
 	// Implement SVG sprite generation and writing
 	// This is a placeholder - you'll need to implement the actual SVG sprite generation
 	var buf bytes.Buffer

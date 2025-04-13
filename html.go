@@ -9,7 +9,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-type htmlHandler struct {
+type indexHtmlHandler struct {
 	*fileHandler
 
 	appName    string // ej: "myapp"
@@ -26,8 +26,8 @@ type htmlHandler struct {
 	deleteBodyNodes []*html.Node
 }
 
-func NewHtmlHandler(ac *AssetConfig) *htmlHandler {
-	h := &htmlHandler{
+func NewHtmlHandler(ac *AssetConfig) *indexHtmlHandler {
+	h := &indexHtmlHandler{
 		fileHandler: NewFileHandler(htmlMainFileName, "text/html", ac),
 		appName:     "myapp",
 		appVersion:  "1.0.0",
@@ -47,7 +47,7 @@ type module struct {
 	content  []byte
 }
 
-func (h *htmlHandler) Title() string {
+func (h *indexHtmlHandler) Title() string {
 	return h.appName + "-v" + h.appVersion
 }
 
@@ -72,7 +72,7 @@ func createScriptNode(src string) *html.Node {
 	}
 }
 
-func (h *htmlHandler) modifyAttributes(n *html.Node) {
+func (h *indexHtmlHandler) modifyAttributes(n *html.Node) {
 	// fmt.Printf("N DATA: %s => %s\n", n.Data, n.Attr)
 	// Verificamos si el nodo es un elemento HTML
 	if n.Type == html.ElementNode {
@@ -127,7 +127,7 @@ func (h *htmlHandler) modifyAttributes(n *html.Node) {
 }
 
 // event: create, remove, write, rename
-func (h *htmlHandler) UpdateContent(filePath, event string, f *assetFile) error {
+func (h *indexHtmlHandler) UpdateContent(filePath, event string, f *assetFile) error {
 
 	var e = "processContent Html " + event
 	if len(f.content) == 0 {

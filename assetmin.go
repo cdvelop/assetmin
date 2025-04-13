@@ -24,11 +24,11 @@ const (
 type AssetMin struct {
 	mu sync.Mutex // Added mutex for synchronization
 	*AssetConfig
-	cssHandler  *fileHandler
-	jsHandler   *fileHandler
-	svgHandler  *svgHandler
-	htmlHandler *htmlHandler
-	// htmlHandler *fileHandler
+	mainStyleCssHandler *fileHandler
+	mainJsHandler       *fileHandler
+	spriteSvgHandler    *spriteSvgHandler
+	indexHtmlHandler    *indexHtmlHandler
+	// indexHtmlHandler *fileHandler
 	min *minify.M
 
 	WriteOnDisk bool // Indica si se debe escribir en disco
@@ -44,7 +44,7 @@ type AssetConfig struct {
 type fileHandler struct {
 	fileOutputName string                 // eg: main.js,style.css,index.html,sprite.svg
 	outputPath     string                 // full path to output file eg: web/public/main.js
-	startCode      func() (string, error) // eg: "console.log('hello world')"
+	startCode      func() (string, error) // eg js: "console.log('hello world')". eg: css: "body{color:red}" eg: html: "<html></html>". eg: svg: "<svg></svg>"
 	themeFolder    string                 // eg: web/theme
 	themeFiles     []*assetFile           // files from theme folder
 	moduleFiles    []*assetFile           // files from modules folder
@@ -73,13 +73,13 @@ func NewFileHandler(outputName, mediaType string, ac *AssetConfig) *fileHandler 
 
 func NewAssetMin(ac *AssetConfig) *AssetMin {
 	c := &AssetMin{
-		AssetConfig: ac,
-		cssHandler:  NewFileHandler(cssMainFileName, "text/css", ac),
-		jsHandler:   NewFileHandler(jsMainFileName, "text/javascript", ac),
-		svgHandler:  NewSvgHandler(ac),
-		htmlHandler: NewHtmlHandler(ac),
-		min:         minify.New(),
-		WriteOnDisk: false, // Default to false
+		AssetConfig:         ac,
+		mainStyleCssHandler: NewFileHandler(cssMainFileName, "text/css", ac),
+		mainJsHandler:       NewFileHandler(jsMainFileName, "text/javascript", ac),
+		spriteSvgHandler:    NewSvgHandler(ac),
+		indexHtmlHandler:    NewHtmlHandler(ac),
+		min:                 minify.New(),
+		WriteOnDisk:         false, // Default to false
 	}
 
 	c.min.AddFunc("text/html", html.Minify)
@@ -87,7 +87,7 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 	c.min.AddFuncRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"), js.Minify)
 	c.min.AddFunc("image/svg+xml", svg.Minify)
 
-	c.jsHandler.startCode = c.startCodeJS
+	c.mainJsHandler.startCode = c.startCodeJS
 
 	// No need to initialize output paths again as NewFileHandler already does this
 	// Ensure output directories exist
