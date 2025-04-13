@@ -66,7 +66,28 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 	// Ensure output directories exist
 	c.EnsureOutputDirectoryExists()
 
+	// Check if output files already exist
+	c.CheckOutputFilesExist()
+
 	return c
+}
+
+// CheckOutputFilesExist checks if the output files for all assets already exist
+func (c *AssetMin) CheckOutputFilesExist() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Check each asset's output file
+	c.mainStyleCssHandler.outputFileExists = fileExists(c.mainStyleCssHandler.outputPath)
+	c.mainJsHandler.outputFileExists = fileExists(c.mainJsHandler.outputPath)
+	c.spriteSvgHandler.outputFileExists = fileExists(c.spriteSvgHandler.outputPath)
+	c.indexHtmlHandler.outputFileExists = fileExists(c.indexHtmlHandler.outputPath)
+}
+
+// Helper function to check if a file exists
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil // If error is nil, the file exists
 }
 
 // crea el directorio de salida si no existe
@@ -76,5 +97,4 @@ func (c *AssetMin) EnsureOutputDirectoryExists() {
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		c.Print("dont create output dir", err)
 	}
-
 }
