@@ -3,8 +3,6 @@ package assetmin
 func NewSvgHandler(ac *AssetConfig) *fileHandler {
 	svgh := NewFileHandler(svgMainFileName, "image/svg+xml", ac, nil)
 
-	// Set the custom initializer for SVG sprite
-
 	// Add the open tags to contentOpen
 	svgh.contentOpen = append(svgh.contentOpen, &contentFile{
 		path: "sprite-open.svg",
