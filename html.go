@@ -28,7 +28,7 @@ type indexHtmlHandler struct {
 
 func NewHtmlHandler(ac *AssetConfig) *indexHtmlHandler {
 	h := &indexHtmlHandler{
-		fileHandler: NewFileHandler(htmlMainFileName, "text/html", ac),
+		fileHandler: NewFileHandler(htmlMainFileName, "text/html", ac, nil),
 		appName:     "myapp",
 		appVersion:  "1.0.0",
 	}
@@ -127,7 +127,7 @@ func (h *indexHtmlHandler) modifyAttributes(n *html.Node) {
 }
 
 // event: create, remove, write, rename
-func (h *indexHtmlHandler) UpdateContent(filePath, event string, f *assetFile) error {
+func (h *indexHtmlHandler) UpdateContent(filePath, event string, f *contentFile) error {
 
 	var e = "processContent Html " + event
 	if len(f.content) == 0 {

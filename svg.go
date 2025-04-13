@@ -16,7 +16,7 @@ type spriteSvgHandler struct {
 
 func NewSvgHandler(ac *AssetConfig) *spriteSvgHandler {
 	svgh := &spriteSvgHandler{
-		fileHandler: NewFileHandler(svgMainFileName, "image/svg+xml", ac),
+		fileHandler: NewFileHandler(svgMainFileName, "image/svg+xml", ac, nil),
 		sprite:      &sprite{},
 		icons:       make(map[string]icon),
 	}
@@ -56,7 +56,7 @@ type path struct {
 }
 
 // event: create, remove, write, rename
-func (h *spriteSvgHandler) UpdateContent(filePath, event string, f *assetFile) error {
+func (h *spriteSvgHandler) UpdateContent(filePath, event string, f *contentFile) error {
 
 	contentStr := string(f.content)
 	if strings.Contains(contentStr, "<svg") {

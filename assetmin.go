@@ -43,34 +43,39 @@ type AssetConfig struct {
 
 type customContentProcessor func(content []byte, event string) ([]byte, error)
 
+// represents a file handler for processing and minifying assets
 type fileHandler struct {
 	fileOutputName string                 // eg: main.js,style.css,index.html,sprite.svg
 	outputPath     string                 // full path to output file eg: web/public/main.js
-	startCode      func() (string, error) // eg js: "console.log('hello world')". eg: css: "body{color:red}" eg: html: "<html></html>". eg: svg: "<svg></svg>"
-	themeFolder    string                 // eg: web/theme
-	themeFiles     []*assetFile           // files from theme folder
-	moduleFiles    []*assetFile           // files from modules folder
 	mediatype      string                 // eg: "text/html", "text/css", "image/svg+xml"
+	initCode       func() (string, error) // eg js: "console.log('hello world')". eg: css: "body{color:red}" eg: html: "<html></html>". eg: svg: "<svg></svg>"
+	themeFolder    string                 // eg: web/theme
+
+	contentOpen   []*contentFile // eg: files from theme folder
+	contentMiddle []*contentFile //eg: files from modules folder
+	contentClose  []*contentFile // eg: files js from testin
 
 	processor customContentProcessor // Custom processor function
 
 }
 
-type assetFile struct {
+// contentFile represents a file with its path and content
+type contentFile struct {
 	path    string // eg: modules/module1/file.js
 	content []byte /// eg: "console.log('hello world')"
 }
 
 // NewFileHandler creates a new fileHandler with the specified parameters
-func NewFileHandler(outputName, mediaType string, ac *AssetConfig) *fileHandler {
+func NewFileHandler(outputName, mediaType string, ac *AssetConfig, initCode func() (string, error)) *fileHandler {
 	handler := &fileHandler{
 		fileOutputName: outputName,
 		outputPath:     filepath.Join(ac.WebFilesFolder(), outputName),
 		mediatype:      mediaType,
-		startCode:      ac.GetRuntimeInitializerJS,
+		initCode:       initCode,
 		themeFolder:    ac.ThemeFolder(),
-		themeFiles:     []*assetFile{},
-		moduleFiles:    []*assetFile{},
+		contentOpen:    []*contentFile{},
+		contentMiddle:  []*contentFile{},
+		contentClose:   []*contentFile{},
 	}
 
 	return handler
@@ -79,8 +84,8 @@ func NewFileHandler(outputName, mediaType string, ac *AssetConfig) *fileHandler 
 func NewAssetMin(ac *AssetConfig) *AssetMin {
 	c := &AssetMin{
 		AssetConfig:         ac,
-		mainStyleCssHandler: NewFileHandler(cssMainFileName, "text/css", ac),
-		mainJsHandler:       NewFileHandler(jsMainFileName, "text/javascript", ac),
+		mainStyleCssHandler: NewFileHandler(cssMainFileName, "text/css", ac, nil),
+		mainJsHandler:       NewFileHandler(jsMainFileName, "text/javascript", ac, ac.GetRuntimeInitializerJS),
 		spriteSvgHandler:    NewSvgHandler(ac),
 		indexHtmlHandler:    NewHtmlHandler(ac),
 		min:                 minify.New(),
@@ -92,7 +97,7 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 	c.min.AddFuncRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"), js.Minify)
 	c.min.AddFunc("image/svg+xml", svg.Minify)
 
-	c.mainJsHandler.startCode = c.startCodeJS
+	c.mainJsHandler.initCode = c.startCodeJS
 
 	// No need to initialize output paths again as NewFileHandler already does this
 	// Ensure output directories exist
