@@ -54,9 +54,8 @@ func setupTestEnv(testCase string, t *testing.T) *TestEnvironment {
 		WebFilesFolder: func() string { return publicDir },
 		Print: func(messages ...any) {
 			t.Log(messages...)
-		},
-		GetRuntimeInitializerJS: func() (string, error) {
-			return "", nil
+		}, GetRuntimeInitializerJS: func() (string, error) {
+			return "\n// WebAssembly initialization code\nconst wasmMemory = new WebAssembly.Memory({initial:10, maximum:100});\n", nil
 		},
 	}
 

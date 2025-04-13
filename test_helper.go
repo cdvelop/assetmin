@@ -256,3 +256,56 @@ func (env *TestEnvironment) TestThemePriority(fileExtension string) {
 	require.Less(env.t, themeIndex, modulesIndex,
 		fmt.Sprintf("The theme content should appear before the modules content in %s", fileType))
 }
+
+// TestJSInitCodePriority verifica que el código de inicialización JS aparece al principio del archivo generado
+func (env *TestEnvironment) TestJSInitCodePriority() {
+	// Crear directorios necesarios
+	env.CreateModulesDir()
+	env.CreateThemeDir()
+	env.CreatePublicDir()
+
+	// 1. Crear archivo en theme
+	themeFileName := "theme-file.js"
+	themeFilePath := filepath.Join(env.ThemeDir, themeFileName)
+	themeContent := []byte("console.log('Theme content');")
+
+	require.NoError(env.t, os.WriteFile(themeFilePath, themeContent, 0644))
+	require.NoError(env.t, env.AssetsHandler.NewFileEvent(themeFileName, ".js", themeFilePath, "create"))
+
+	// 2. Crear archivo en modules
+	modulesFileName := "modules-file.js"
+	modulesFilePath := filepath.Join(env.ModulesDir, modulesFileName)
+	modulesContent := []byte("console.log('Modules content');")
+
+	require.NoError(env.t, os.WriteFile(modulesFilePath, modulesContent, 0644))
+	require.NoError(env.t, env.AssetsHandler.NewFileEvent(modulesFileName, ".js", modulesFilePath, "create"))
+
+	// Verificar que el archivo se haya generado
+	_, err := os.Stat(env.MainJsPath)
+	require.NoError(env.t, err, "El archivo main.js no fue creado")
+
+	// Leer contenido del archivo generado
+	content, err := os.ReadFile(env.MainJsPath)
+	require.NoError(env.t, err, "No se pudo leer el archivo main.js")
+	contentStr := string(content)
+
+	// Verificar que todos los contenidos estén presentes
+	require.Contains(env.t, contentStr, "use strict", "El contenido 'use strict' debería estar presente")
+	require.Contains(env.t, contentStr, "WebAssembly.Memory", "El código de inicialización de WebAssembly debería estar presente")
+	require.Contains(env.t, contentStr, "Theme content", "El contenido de theme debería estar presente")
+	require.Contains(env.t, contentStr, "Modules content", "El contenido de modules debería estar presente")
+
+	// Verificar que el código de inicialización aparece antes que el contenido de theme y modules
+	initCodeIndex := strings.Index(contentStr, "use strict")
+	wasmCodeIndex := strings.Index(contentStr, "WebAssembly")
+	themeIndex := strings.Index(contentStr, "Theme content")
+	modulesIndex := strings.Index(contentStr, "Modules content")
+
+	// El código de inicialización debe aparecer antes que todo
+	require.Less(env.t, initCodeIndex, themeIndex, "El código de inicialización 'use strict' debe aparecer antes que el contenido de theme")
+	require.Less(env.t, wasmCodeIndex, themeIndex, "El código de inicialización WebAssembly debe aparecer antes que el contenido de theme")
+
+	// Verificar la secuencia correcta de importancia: initCode -> wasmCode -> theme -> modules
+	require.True(env.t, initCodeIndex < wasmCodeIndex && wasmCodeIndex < themeIndex && themeIndex < modulesIndex,
+		"El orden de importancia debe ser: código de inicialización -> código WebAssembly -> contenido de theme -> contenido de módulos")
+}

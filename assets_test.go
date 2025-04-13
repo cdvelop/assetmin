@@ -89,6 +89,11 @@ func TestAssetScenario(t *testing.T) {
 			env.TestThemePriority(".css")
 		})
 
+		// Probar que el código de inicialización JS aparezca al principio
+		t.Run("js_init_code_priority", func(t *testing.T) {
+			env.TestJSInitCodePriority()
+		})
+
 		env.CleanDirectory()
 	})
 

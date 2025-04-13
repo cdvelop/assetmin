@@ -20,6 +20,16 @@ func TestOutputFileHandling(t *testing.T) {
 		env := setupTestEnv("uc00_output_file_handling", t)
 		env.CreatePublicDir() // Ensure public directory exists
 
+		// Desactivar el código de inicialización durante esta prueba para evitar conflictos
+		originalInitFunc := env.AssetsHandler.GetRuntimeInitializerJS
+		env.AssetsHandler.GetRuntimeInitializerJS = func() (string, error) {
+			return "", nil
+		}
+		defer func() {
+			// Restaurar la función original al finalizar
+			env.AssetsHandler.GetRuntimeInitializerJS = originalInitFunc
+		}()
+
 		// Create an initial JS file to ensure main.js is created
 		initialJsFile := filepath.Join(env.BaseDir, "initial.js")
 		require.NoError(t, os.WriteFile(initialJsFile, []byte("console.log('initial');"), 0644))
