@@ -1,164 +1,86 @@
 package assetmin
 
-import (
-	"bytes"
-	"errors"
-	"fmt"
-	"strings"
-
-	"golang.org/x/net/html"
-)
-
-type indexHtmlHandler struct {
+type htmlHandler struct {
 	*fileHandler
-
-	appName    string // ej: "myapp"
-	appVersion string // ej: "1.0.0"
-
-	index *html.Node
-
-	// files []*file
-	buf bytes.Buffer
-
-	head            *html.Node
-	deleteHeadNodes []*html.Node
-	body            *html.Node
-	deleteBodyNodes []*html.Node
 }
 
-func NewHtmlHandler(ac *AssetConfig) *indexHtmlHandler {
-	h := &indexHtmlHandler{
-		fileHandler: NewFileHandler(htmlMainFileName, "text/html", ac, nil),
-		appName:     "myapp",
-		appVersion:  "1.0.0",
+func NewHtmlHandler(ac *AssetConfig) *fileHandler {
+	h := NewFileHandler(htmlMainFileName, "text/html", ac, nil)
+
+	hh := &htmlHandler{
+		fileHandler: h,
 	}
+	// Configurar el procesador personalizado para manejar los módulos HTML
+	h.customFileProcessor = hh.processModuleFile
+
+	// Agregar el marcador de inicio de los módulos HTML
+	h.contentOpen = append(h.contentOpen, &contentFile{
+		path: "index-open.html",
+		content: []byte(`<!DOCTYPE html>
+<html lang="es">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<meta name="viewport">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<!-- posibles valores de contenido: predeterminado, negro o negro translúcido -->
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<link rel="icon" type="image/png" href="static/favicon.png">
+	<link rel="StyleSheet" href="{{.StyleSheet}}">
+	<meta name="JsonBootActions" content="{{.JsonBootActions}}">
+	<title>{{.AppName}}-ver.{{.AppVersion}}</title>
+	
+</head>
+
+<body>
+
+	<nav class="menu-container">
+		<ul class="navbar-container">
+			<!-- <li class="navbar-item">
+				<a href="#" class="navbar-link" name="home">
+					<svg aria-hidden="true" focusable="false" class="fa-primary">
+						<use xlink:href="#icon-home" />
+					</svg>
+					<span class="link-text">Home</span>
+				</a>
+			</li> -->
+			{{.Menu}}
+		</ul>
+	</nav>
+	<header>
+		<div id="USER_NAME"><a href="#login" name="login" title="Cerrar Sesion">{{.UserName}}</a></div>
+		<div id="user-desktop-messages">
+			<H4 class="err">{{.Message}}</H4>
+		</div>
+		<h2 id="USER_AREA">{{.UserArea}}</h2>
+	</header>
+
+	<div id="user-mobile-messages">
+		<H4 class="err">{{.Message}}</H4>
+	</div>
+	<div id="modal-window" onclick="modalHandler(event)">
+		<H4>MODO DE VISUALIZACIÓN INCOMPATIBLE</H4>
+	</div>
+
+	<!-- Inicio de módulos HTML -->`),
+	})
+
+	// Agregar el marcador de cierre de los módulos HTML
+	h.contentClose = append(h.contentClose, &contentFile{
+		path: "index-close.html",
+		content: []byte(`	<!-- Fin de módulos HTML -->
+	<script src="{{.Script}}"></script>
+</body>
+
+</html>`),
+	})
+
 	return h
-
 }
 
-type file struct {
-	index   int
-	path    string
-	content []byte
-}
-
-type module struct {
-	filePath string
-	content  []byte
-}
-
-func (h *indexHtmlHandler) Title() string {
-	return h.appName + "-v" + h.appVersion
-}
-
-func createLinkNode(href string) *html.Node {
-	return &html.Node{
-		Type: html.ElementNode,
-		Data: "link",
-		Attr: []html.Attribute{
-			{Key: "rel", Val: "stylesheet"},
-			{Key: "href", Val: href},
-		},
-	}
-}
-
-func createScriptNode(src string) *html.Node {
-	return &html.Node{
-		Type: html.ElementNode,
-		Data: "script",
-		Attr: []html.Attribute{
-			{Key: "src", Val: src},
-		},
-	}
-}
-
-func (h *indexHtmlHandler) modifyAttributes(n *html.Node) {
-	// fmt.Printf("N DATA: %s => %s\n", n.Data, n.Attr)
-	// Verificamos si el nodo es un elemento HTML
-	if n.Type == html.ElementNode {
-		switch n.Data {
-
-		case "title":
-			// fmt.Println("**TITLE NODE FOUND:", n.Data, n.Attr)
-			// Agregar el nuevo título como un nodo de texto
-			n.FirstChild.Data = h.Title()
-
-		case "body":
-			// Marcamos que hemos llegado al final del head y empezamos el body
-			// fmt.Println("**END HEAD BODY START:", n.Data)
-			// Añadimos el script principal al final del body
-			n.AppendChild(createScriptNode(jsMainFileName))
-		case "head":
-			h.head = n
-		case "link":
-			var stylesheetType, externalAsset bool
-			// fmt.Println("LINK NODE FOUND:", n.Data, "n.Attr:", n.Attr)
-
-			// Analizamos los atributos del nodo link
-			for i, a := range n.Attr {
-				if a.Key == "rel" && a.Val == "stylesheet" {
-					stylesheetType = true
-				}
-				if strings.HasPrefix(a.Val, "http://") || strings.HasPrefix(a.Val, "https://") {
-					externalAsset = true
-				}
-				// fmt.Printf("key: %s value: %s\n", a.Key, a.Val)
-
-				// Si es un enlace a un favicon, lo modificamos para que apunte a la carpeta de assets
-				if strings.HasPrefix(a.Val, "favicon") {
-					// fmt.Println("=> favicon found:", a.Val)
-					n.Attr[i].Val = a.Val
-				}
-			}
-			// fmt.Println("stylesheetType:", stylesheetType, "externalAsset:", externalAsset, n.Attr)
-
-			// Si es una hoja de estilos interna, la eliminamos
-			if h.head != nil && stylesheetType && !externalAsset {
-				// fmt.Println("agregando nodo a eliminar:", n.Attr)
-				h.deleteHeadNodes = append(h.deleteHeadNodes, n)
-			}
-		}
-	}
-
-	// Procesamos recursivamente todos los hijos del nodo actual
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		h.modifyAttributes(c)
-	}
-}
-
-// event: create, remove, write, rename
-func (h *indexHtmlHandler) UpdateContent(filePath, event string, f *contentFile) error {
-
-	var e = "processContent Html " + event
-	if len(f.content) == 0 {
-		return nil
-	}
-
-	fmt.Println("Compilando HTML..." + filePath)
-
-	var err error
-	if event == "create" || event == "update" {
-		h.head = nil
-		h.index, err = html.Parse(bytes.NewReader(f.content))
-		if err != nil {
-			return errors.New(e + err.Error())
-		}
-
-		// Modificar atributos
-		h.modifyAttributes(h.index)
-
-		// delete head nodes
-		if h.head != nil {
-			for _, n := range h.deleteHeadNodes {
-				// fmt.Println("=> eliminando nodo:", n.Attr)
-				h.head.RemoveChild(n)
-			}
-
-			// Añadimos el enlace al CSS principal al final del head
-			h.head.AppendChild(createLinkNode(cssMainFileName))
-		}
-
-	}
+func (h *htmlHandler) processModuleFile(event string, f *contentFile) error {
 
 	return nil
 }

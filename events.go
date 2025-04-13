@@ -31,7 +31,7 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 
 	case ".html":
 		err := c.indexHtmlHandler.UpdateContent(filePath, event, file)
-		return c.indexHtmlHandler.fileHandler, err
+		return c.indexHtmlHandler, err
 	}
 
 	return nil, errors.New("UpdateFileContentInMemory extension: " + extension + " not found " + filePath)

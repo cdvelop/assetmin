@@ -27,7 +27,7 @@ type AssetMin struct {
 	mainStyleCssHandler *fileHandler
 	mainJsHandler       *fileHandler
 	spriteSvgHandler    *fileHandler
-	indexHtmlHandler    *indexHtmlHandler
+	indexHtmlHandler    *fileHandler
 	// indexHtmlHandler *fileHandler
 	min *minify.M
 
