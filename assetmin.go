@@ -41,6 +41,8 @@ type AssetConfig struct {
 	GetRuntimeInitializerJS func() (string, error) // javascript code to initialize the wasm or other handlers
 }
 
+type customContentProcessor func(content []byte, event string) ([]byte, error)
+
 type fileHandler struct {
 	fileOutputName string                 // eg: main.js,style.css,index.html,sprite.svg
 	outputPath     string                 // full path to output file eg: web/public/main.js
@@ -49,6 +51,9 @@ type fileHandler struct {
 	themeFiles     []*assetFile           // files from theme folder
 	moduleFiles    []*assetFile           // files from modules folder
 	mediatype      string                 // eg: "text/html", "text/css", "image/svg+xml"
+
+	processor customContentProcessor // Custom processor function
+
 }
 
 type assetFile struct {

@@ -38,27 +38,33 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 }
 
 // assetHandlerFiles ej &mainJsHandler, &mainStyleCssHandler
-func (fh *fileHandler) UpdateContent(filePath, event string, newFile *assetFile) {
-	// This function is now handled by the UpdateContent method in each handler
-	// Keeping it here for backward compatibility
-	filesToUpdate := &fh.moduleFiles
+func (h *fileHandler) UpdateContent(filePath, event string, newFile *assetFile) {
 
-	// Corregir la lógica para identificar correctamente archivos de tema
-	// Verificamos si el path contiene "theme" en cualquier parte de la ruta
-	if strings.Contains(filePath, fh.themeFolder) {
-		filesToUpdate = &fh.themeFiles
+	// por defecto los archivos de destino son los de modulo
+	filesToUpdate := &h.moduleFiles
+
+	// verificar si es de tema asi actualizamos los archivos de tema
+	if strings.Contains(filePath, h.themeFolder) {
+		filesToUpdate = &h.themeFiles
 	}
-	if event == "remove" || event == "delete" {
-		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {
-			*filesToUpdate = slices.Delete((*filesToUpdate), idx, idx+1)
-		}
-	} else {
+
+	switch event {
+	case "create", "write":
+
 		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {
 			(*filesToUpdate)[idx] = newFile
 		} else {
 			*filesToUpdate = append(*filesToUpdate, newFile)
 		}
+
+	case "rename": // cuando se renombra un archivo, se crea uno nuevo y se elimina el antiguo
+
+	case "remove", "delete":
+		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {
+			*filesToUpdate = slices.Delete((*filesToUpdate), idx, idx+1)
+		}
 	}
+
 }
 
 func findFileIndex(files []*assetFile, filePath string) int {
