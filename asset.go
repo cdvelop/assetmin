@@ -9,32 +9,31 @@ import (
 
 // represents a file handler for processing and minifying assets
 type asset struct {
-	fileOutputName   string                 // eg: main.js,style.css,index.html,sprite.svg
-	outputPath       string                 // full path to output file eg: web/public/main.js
-	mediatype        string                 // eg: "text/html", "text/css", "image/svg+xml"
-	initCode         func() (string, error) // eg js: "console.log('hello world')". eg: css: "body{color:red}" eg: html: "<html></html>". eg: svg: "<svg></svg>"
-	themeFolder      string                 // eg: web/theme
-	outputFileExists bool                   // indicates if the output file already exists
+	fileOutputName string                 // eg: main.js,style.css,index.html,sprite.svg
+	outputPath     string                 // full path to output file eg: web/public/main.js
+	mediatype      string                 // eg: "text/html", "text/css", "image/svg+xml"
+	initCode       func() (string, error) // eg js: "console.log('hello world')". eg: css: "body{color:red}" eg: html: "<html></html>". eg: svg: "<svg></svg>"
+	themeFolder    string                 // eg: web/theme
 
 	contentOpen   []*contentFile // eg: files from theme folder
 	contentMiddle []*contentFile //eg: files from modules folder
 	contentClose  []*contentFile // eg: files js from testin or end tags
 
-	customFileProcessor func(event string, f *contentFile) error // Custom processor function
+	notifyMeIfOutputFileExists func(exist bool) // optional callback to notify if output file exists
 }
 
 // newAssetFile creates a new asset with the specified parameters
 func newAssetFile(outputName, mediaType string, ac *AssetConfig, initCode func() (string, error)) *asset {
 	handler := &asset{
-		fileOutputName:      outputName,
-		outputPath:          filepath.Join(ac.WebFilesFolder(), outputName),
-		mediatype:           mediaType,
-		initCode:            initCode,
-		themeFolder:         ac.ThemeFolder(),
-		contentOpen:         []*contentFile{},
-		contentMiddle:       []*contentFile{},
-		contentClose:        []*contentFile{},
-		customFileProcessor: nil, // Default to nil
+		fileOutputName:             outputName,
+		outputPath:                 filepath.Join(ac.WebFilesFolder(), outputName),
+		mediatype:                  mediaType,
+		initCode:                   initCode,
+		themeFolder:                ac.ThemeFolder(),
+		contentOpen:                []*contentFile{},
+		contentMiddle:              []*contentFile{},
+		contentClose:               []*contentFile{},
+		notifyMeIfOutputFileExists: nil, // Default to nil notification
 	}
 
 	return handler
@@ -74,11 +73,6 @@ func (h *asset) UpdateContent(filePath, event string, f *contentFile) (err error
 		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {
 			*filesToUpdate = slices.Delete((*filesToUpdate), idx, idx+1)
 		}
-	}
-
-	// If a custom processor is provided, use it for content-specific processing
-	if h.customFileProcessor != nil && len(f.content) > 0 {
-		err = h.customFileProcessor(event, f)
 	}
 
 	return

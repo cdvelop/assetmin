@@ -67,21 +67,32 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 	c.EnsureOutputDirectoryExists()
 
 	// Check if output files already exist
-	c.CheckOutputFilesExist()
+	c.NotifyIfOutputFilesExist()
 
 	return c
 }
 
-// CheckOutputFilesExist checks if the output files for all assets already exist
-func (c *AssetMin) CheckOutputFilesExist() {
+// NotifyIfOutputFilesExist checks if the output files for all assets already exist
+func (c *AssetMin) NotifyIfOutputFilesExist() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Check each asset's output file
-	c.mainStyleCssHandler.outputFileExists = fileExists(c.mainStyleCssHandler.outputPath)
-	c.mainJsHandler.outputFileExists = fileExists(c.mainJsHandler.outputPath)
-	c.spriteSvgHandler.outputFileExists = fileExists(c.spriteSvgHandler.outputPath)
-	c.indexHtmlHandler.outputFileExists = fileExists(c.indexHtmlHandler.outputPath)
+	// Notify handlers if their notification callbacks are set
+	if c.mainStyleCssHandler.notifyMeIfOutputFileExists != nil {
+		c.mainStyleCssHandler.notifyMeIfOutputFileExists(fileExists(c.mainStyleCssHandler.outputPath))
+	}
+
+	if c.mainJsHandler.notifyMeIfOutputFileExists != nil {
+		c.mainJsHandler.notifyMeIfOutputFileExists(fileExists(c.mainJsHandler.outputPath))
+	}
+
+	if c.spriteSvgHandler.notifyMeIfOutputFileExists != nil {
+		c.spriteSvgHandler.notifyMeIfOutputFileExists(fileExists(c.spriteSvgHandler.outputPath))
+	}
+
+	if c.indexHtmlHandler.notifyMeIfOutputFileExists != nil {
+		c.indexHtmlHandler.notifyMeIfOutputFileExists(fileExists(c.indexHtmlHandler.outputPath))
+	}
 }
 
 // Helper function to check if a file exists

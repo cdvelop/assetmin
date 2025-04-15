@@ -1,7 +1,5 @@
 package assetmin
 
-import "slices"
-
 type htmlHandler struct {
 	*asset
 }
@@ -22,8 +20,8 @@ func NewHtmlHandler(ac *AssetConfig) *asset {
 	hh := &htmlHandler{
 		asset: af,
 	}
-	// Configurar el procesador personalizado para manejar los módulos HTML
-	af.customFileProcessor = hh.customFileProcessor
+	// Configurar el handler de notificación de archivo de salida
+	af.notifyMeIfOutputFileExists = hh.notifyMeIfOutputFileExists
 
 	//  default marcador de inicio index HTML
 	af.contentOpen = append(af.contentOpen, &contentFile{
@@ -49,35 +47,8 @@ func NewHtmlHandler(ac *AssetConfig) *asset {
 	return af
 }
 
-func (h *htmlHandler) customFileProcessor(event string, f *contentFile) error {
-	// Si el evento es "remove", buscar y eliminar el módulo del arreglo contentMiddle
-	if event == "remove" {
-		for i, existingFile := range h.contentMiddle {
-			if existingFile.path == f.path {
-				// Eliminar el archivo del arreglo
-				h.contentMiddle = slices.Delete(h.contentMiddle, i, i+1)
-				break
-			}
-		}
-		return nil
-	}
+func (h *htmlHandler) notifyMeIfOutputFileExists(exist bool) {
+	// si es true quiere decir que el archivo de salida existe por ende debemos cambiar el contenido
+	// de apertura y cierre segun este archivo
 
-	// Para eventos "create" o "update"
-	// Primero verificar si el archivo ya existe en contentMiddle
-	exists := false
-	for i, existingFile := range h.contentMiddle {
-		if existingFile.path == f.path {
-			// Actualizar el contenido del archivo existente
-			h.contentMiddle[i].content = f.content
-			exists = true
-			break
-		}
-	}
-
-	// Si el archivo no existe en contentMiddle, agregarlo
-	if !exists {
-		h.contentMiddle = append(h.contentMiddle, f)
-	}
-
-	return nil
 }
