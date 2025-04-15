@@ -74,9 +74,14 @@ func (h *htmlHandler) notifyMeIfOutputFileExists(content string) {
 // parseExistingHtmlContent analiza un archivo HTML existente para identificar
 // las secciones de apertura y cierre, considerando dónde deben insertarse los módulos
 func parseExistingHtmlContent(content string) (openContent, closeContent string) {
-	// Buscar un marcador explícito
+	// Buscar un marcador explícito de commentario
 	if i := strings.Index(content, "<!-- MODULES_PLACEHOLDER -->"); i != -1 {
 		return content[:i], content[i+len("<!-- MODULES_PLACEHOLDER -->"):]
+	}
+
+	// Buscar un marcador de plantilla Go
+	if i := strings.Index(content, "{{.Modules}}"); i != -1 {
+		return content[:i], content[i+len("{{.Modules}}"):]
 	}
 
 	lines := strings.Split(content, "\n")

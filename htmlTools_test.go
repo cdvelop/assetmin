@@ -127,6 +127,9 @@ func TestParseExistingHtmlContent(t *testing.T) {
 		// Verificar que el contenido se dividió correctamente en el marcador {{.Modules}}
 		assert.Contains(t, open, "<div id=\"user-mobile-messages\">")
 		assert.Contains(t, open, "<h4 class=\"err\">Message</h4>")
+		assert.Contains(t, open, `<div id="user-mobile-messages">
+		<h4 class="err">Message</h4>
+	</div>`)
 		assert.Contains(t, close, "<script src=\"app.js\"></script>")
 
 		// Verificar que la división fue exacta alrededor del marcador
