@@ -93,12 +93,16 @@ func (c *AssetMin) NotifyIfOutputFilesExist() {
 	if c.indexHtmlHandler.notifyMeIfOutputFileExists != nil {
 		c.indexHtmlHandler.notifyMeIfOutputFileExists(fileExists(c.indexHtmlHandler.outputPath))
 	}
+
 }
 
-// Helper function to check if a file exists
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil // If error is nil, the file exists
+// Helper function to check if a file exists and return its content
+func fileExists(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "" // Return empty string if file doesn't exist or can't be read
+	}
+	return string(data) // Return file content as string
 }
 
 // crea el directorio de salida si no existe

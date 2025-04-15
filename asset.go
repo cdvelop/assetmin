@@ -19,7 +19,7 @@ type asset struct {
 	contentMiddle []*contentFile //eg: files from modules folder
 	contentClose  []*contentFile // eg: files js from testin or end tags
 
-	notifyMeIfOutputFileExists func(exist bool) // optional callback to notify if output file exists
+	notifyMeIfOutputFileExists func(content string) // optional callback to notify if content if != "" file exists
 }
 
 // newAssetFile creates a new asset with the specified parameters

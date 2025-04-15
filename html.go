@@ -47,7 +47,7 @@ func NewHtmlHandler(ac *AssetConfig) *asset {
 	return af
 }
 
-func (h *htmlHandler) notifyMeIfOutputFileExists(exist bool) {
+func (h *htmlHandler) notifyMeIfOutputFileExists(content string) {
 	// si es true quiere decir que el archivo de salida existe por ende debemos cambiar el contenido
 	// de apertura y cierre segun este archivo
 
