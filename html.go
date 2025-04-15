@@ -6,37 +6,47 @@ type htmlHandler struct {
 	*asset
 }
 
+// generateStylesheetLink returns HTML tag for linking a CSS stylesheet
+func generateStylesheetLink() []byte {
+	return []byte(`<link rel="stylesheet" href="` + cssMainFileName + `" type="text/css" />`)
+}
+
+// generateJavaScriptTag returns HTML script tag for a JavaScript file
+func generateJavaScriptTag() []byte {
+	return []byte(`<script src="` + jsMainFileName + `" type="text/javascript"></script>`)
+}
+
 func NewHtmlHandler(ac *AssetConfig) *asset {
-	h := newAssetFile(htmlMainFileName, "text/html", ac, nil)
+	af := newAssetFile(htmlMainFileName, "text/html", ac, nil)
 
 	hh := &htmlHandler{
-		asset: h,
+		asset: af,
 	}
 	// Configurar el procesador personalizado para manejar los módulos HTML
-	h.customFileProcessor = hh.customFileProcessor
+	af.customFileProcessor = hh.customFileProcessor
 
 	//  default marcador de inicio index HTML
-	h.contentOpen = append(h.contentOpen, &contentFile{
+	af.contentOpen = append(af.contentOpen, &contentFile{
 		path: "index-open.html",
 		content: []byte(`<!doctype html>
 <html>
 <head>
 	<meta charset="utf-8">
 	<title></title>
-	<link rel="stylesheet" href="style.css" type="text/css" />
+	` + string(generateStylesheetLink()) + `
 </head>
 <body>`),
 	})
 
 	// default marcador de cierre index HTML
-	h.contentClose = append(h.contentClose, &contentFile{
+	af.contentClose = append(af.contentClose, &contentFile{
 		path: "index-close.html",
-		content: []byte(`<script src="main.js" type="text/javascript"></script>
+		content: []byte(string(generateJavaScriptTag()) + `
 </body>
 </html>`),
 	})
 
-	return h
+	return af
 }
 
 func (h *htmlHandler) customFileProcessor(event string, f *contentFile) error {
