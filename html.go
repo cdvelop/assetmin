@@ -52,11 +52,13 @@ func NewHtmlHandler(ac *AssetConfig) *asset {
 func (h *htmlHandler) notifyMeIfOutputFileExists(content string) {
 	// Si hay contenido, significa que el archivo de salida existe
 	if content != "" {
-		openContent, closeContent := parseExistingHtmlContent(content)
-
-		// Limpiamos los contenidos anteriores
+		// Forzamos la limpieza completa del contenido anterior
 		h.asset.contentOpen = h.asset.contentOpen[:0]
 		h.asset.contentClose = h.asset.contentClose[:0]
+		h.asset.contentMiddle = h.asset.contentMiddle[:0]
+
+		// Analizamos el contenido existente para identificar las secciones
+		openContent, closeContent := parseExistingHtmlContent(content)
 
 		// Reemplazamos el contenido de apertura y cierre con el encontrado
 		h.asset.contentOpen = append(h.asset.contentOpen, &contentFile{
@@ -74,7 +76,7 @@ func (h *htmlHandler) notifyMeIfOutputFileExists(content string) {
 // parseExistingHtmlContent analiza un archivo HTML existente para identificar
 // las secciones de apertura y cierre, considerando dónde deben insertarse los módulos
 func parseExistingHtmlContent(content string) (openContent, closeContent string) {
-	// Buscar un marcador explícito de commentario
+	// Buscar un marcador explícito de comentario
 	if i := strings.Index(content, "<!-- MODULES_PLACEHOLDER -->"); i != -1 {
 		return content[:i], content[i+len("<!-- MODULES_PLACEHOLDER -->"):]
 	}
@@ -98,6 +100,8 @@ func parseExistingHtmlContent(content string) (openContent, closeContent string)
 		}
 
 		if inMain && strings.Contains(lineLower, "</main>") {
+			// Colocar el índice antes del cierre de main para que los módulos
+			// se inserten dentro del tag main
 			splitIndex = i
 			break
 		}

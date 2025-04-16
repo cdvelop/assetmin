@@ -50,10 +50,11 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 		min:                 minify.New(),
 		WriteOnDisk:         false, // Default to false
 	}
-
 	c.min.Add("text/html", &html.Minifier{
 		KeepDocumentTags: true, // para mantener las etiquetas html,head,body. tambien mantiene las etiquetas de cierre
 		KeepEndTags:      true, // preserve all end tags
+		KeepWhitespace:   true, // preserve whitespace to maintain structure
+		KeepQuotes:       true, // preserve quotes in attribute values
 	})
 
 	c.min.AddFunc("text/css", css.Minify)

@@ -84,12 +84,13 @@ func TestHtmlModulesIntegration(t *testing.T) {
 
 		env.CleanDirectory()
 	})
-
 	t.Run("uc10_html_modules_integration_with_index", func(t *testing.T) {
 		// este test verifica que cuando existe un index.html en el directorio de salida
 		// y se agregan nuevos módulos HTML, estos se deben integrar respetando la estructura existente
 
 		env := setupTestEnv("uc10_html_modules_integration_with_index", t)
+		// Primero limpiamos el directorio para asegurarnos de partir de cero
+		env.CleanDirectory()
 
 		// Crear el directorio público donde estará el index.html
 		env.CreatePublicDir()
@@ -117,6 +118,7 @@ func TestHtmlModulesIntegration(t *testing.T) {
 </body>
 </html>`
 
+		// Escribir el HTML base en el index.html
 		require.NoError(t, os.WriteFile(env.MainHtmlPath, []byte(existingHtml), 0644))
 		require.FileExists(t, env.MainHtmlPath, "El archivo index.html debe existir antes de iniciar la prueba")
 
