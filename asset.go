@@ -2,6 +2,7 @@ package assetmin
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -22,6 +23,25 @@ type asset struct {
 	notifyMeIfOutputFileExists func(content string) // optional callback to notify if content if != "" file exists
 }
 
+// contentFile represents a file with its path and content
+type contentFile struct {
+	path    string // eg: modules/module1/file.js
+	content []byte /// eg: "console.log('hello world')"
+}
+
+// WriteToDisk writes the content file to disk at the specified path
+// It creates parent directories if they don't exist
+func (f *contentFile) WriteToDisk() error {
+	// Create parent directories if they don't exist
+	dir := filepath.Dir(f.path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	// Write content to the file
+	return os.WriteFile(f.path, f.content, 0644)
+}
+
 // newAssetFile creates a new asset with the specified parameters
 func newAssetFile(outputName, mediaType string, ac *AssetConfig, initCode func() (string, error)) *asset {
 	handler := &asset{
@@ -37,12 +57,6 @@ func newAssetFile(outputName, mediaType string, ac *AssetConfig, initCode func()
 	}
 
 	return handler
-}
-
-// contentFile represents a file with its path and content
-type contentFile struct {
-	path    string // eg: modules/module1/file.js
-	content []byte /// eg: "console.log('hello world')"
 }
 
 // assetHandlerFiles ej &mainJsHandler, &mainStyleCssHandler

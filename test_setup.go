@@ -41,7 +41,9 @@ func (env *TestEnvironment) CleanDirectory() {
 
 // setupTestEnv configures a minimal environment for testing AssetMin
 // default write to disk is true, but can be set to false for testing purposes
-func setupTestEnv(testCase string, t *testing.T) *TestEnvironment {
+// objects param can contain *contentFile instances which will be written to disk
+// before the AssetMin handler is created
+func setupTestEnv(testCase string, t *testing.T, objects ...any) *TestEnvironment {
 	// Create real directory instead of a temporary one
 	baseDir := filepath.Join(".", "test", testCase)
 	themeDir := filepath.Join(baseDir, "web", "theme")
@@ -57,6 +59,17 @@ func setupTestEnv(testCase string, t *testing.T) *TestEnvironment {
 		}, GetRuntimeInitializerJS: func() (string, error) {
 			return "\n// WebAssembly initialization code\nconst wasmMemory = new WebAssembly.Memory({initial:10, maximum:100});\n", nil
 		},
+	}
+
+	// Check if any of the objects is a contentFile and write it to disk
+	for _, obj := range objects {
+		if file, ok := obj.(*contentFile); ok {
+			if err := file.WriteToDisk(); err != nil {
+				t.Logf("Error writing contentFile to disk: %v", err)
+			} else {
+				t.Logf("Successfully wrote file to %s", file.path)
+			}
+		}
 	}
 
 	// Create asset handler with disk writing enabled

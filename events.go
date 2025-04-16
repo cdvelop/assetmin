@@ -63,10 +63,11 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 		return errors.New(e + err.Error())
 	}
 
-	fh, err := c.UpdateFileContentInMemory(filePath, extension, event, content)
+	fh, err := c.UpdateFileContentInMemory(filePath, extension, event, content) // Update contentMiddle
 	if err != nil {
 		return errors.New(e + err.Error())
 	}
+
 	// Check event type and file existence to determine if we should write to disk
 	if !c.WriteOnDisk {
 		// If the file doesn't exist, create it regardless of event type
