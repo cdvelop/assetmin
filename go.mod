@@ -4,7 +4,7 @@ go 1.23.0
 
 toolchain go1.23.8
 
-require github.com/tdewolff/minify/v2 v2.23.1
+require github.com/tdewolff/minify/v2 v2.23.9
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -14,5 +14,5 @@ require (
 
 require (
 	github.com/stretchr/testify v1.10.0
-	github.com/tdewolff/parse/v2 v2.7.23 // indirect
+	github.com/tdewolff/parse/v2 v2.8.1 // indirect
 )

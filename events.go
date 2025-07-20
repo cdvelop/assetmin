@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -39,7 +40,7 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) error {
 	// Check if filePath matches any of our output paths to avoid infinite recursion
 	if c.isOutputPath(filePath) {
-		c.Print("Skipping output file:", filePath)
+		c.writeMessage("Skipping output file:", filePath)
 		return nil
 	}
 
@@ -51,7 +52,7 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 		return errors.New(e + "filePath is empty")
 	}
 
-	c.Print("Asset", extension, event, "...", filePath)
+	c.writeMessage("Asset", extension, event, "...", filePath)
 
 	// Increase sleep duration significantly to allow file system operations (like write after rename) to settle
 	// fail when time is < 10ms
@@ -141,9 +142,23 @@ func (c *AssetMin) isOutputPath(filePath string) bool {
 	svgOutputPath := filepath.Clean(c.spriteSvgHandler.outputPath)
 	htmlHandlerOutputPath := filepath.Clean(c.indexHtmlHandler.outputPath)
 
-	return normalizedFilePath == cssOutputPath ||
+	// Case-sensitive comparison first
+	if normalizedFilePath == cssOutputPath ||
 		normalizedFilePath == jsOutputPath ||
 		normalizedFilePath == svgOutputPath ||
-		normalizedFilePath == htmlHandlerOutputPath
+		normalizedFilePath == htmlHandlerOutputPath {
+		return true
+	}
 
+	// Case-insensitive comparison for cross-platform compatibility
+	normalizedFilePathLower := strings.ToLower(normalizedFilePath)
+	cssOutputPathLower := strings.ToLower(cssOutputPath)
+	jsOutputPathLower := strings.ToLower(jsOutputPath)
+	svgOutputPathLower := strings.ToLower(svgOutputPath)
+	htmlHandlerOutputPathLower := strings.ToLower(htmlHandlerOutputPath)
+
+	return normalizedFilePathLower == cssOutputPathLower ||
+		normalizedFilePathLower == jsOutputPathLower ||
+		normalizedFilePathLower == svgOutputPathLower ||
+		normalizedFilePathLower == htmlHandlerOutputPathLower
 }

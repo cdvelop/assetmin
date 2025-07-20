@@ -1,6 +1,8 @@
 package assetmin
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"regexp"
 
@@ -36,7 +38,7 @@ type AssetMin struct {
 type AssetConfig struct {
 	ThemeFolder             func() string          // eg: web/theme
 	WebFilesFolder          func() string          // eg: web/static, web/public, web/assets
-	Print                   func(messages ...any)  // eg: fmt.Println
+	Writer                  io.Writer              // Standard io.Writer for output messages
 	GetRuntimeInitializerJS func() (string, error) // javascript code to initialize the wasm or other handlers
 }
 
@@ -71,6 +73,20 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 	c.NotifyIfOutputFilesExist()
 
 	return c
+}
+
+// writeMessage writes a message to the configured Writer
+func (c *AssetMin) writeMessage(messages ...any) {
+	if c.Writer != nil {
+		// Join messages with spaces like devtui's joinMessages function
+		var content string
+		var space string
+		for _, m := range messages {
+			content += space + fmt.Sprint(m)
+			space = " "
+		}
+		c.Writer.Write([]byte(content))
+	}
 }
 
 // NotifyIfOutputFilesExist checks if the output files for all assets already exist
@@ -111,6 +127,6 @@ func (c *AssetMin) EnsureOutputDirectoryExists() {
 	// Ensure main output directory exists
 	outputDir := c.WebFilesFolder()
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		c.Print("dont create output dir", err)
+		c.writeMessage("dont create output dir", err)
 	}
 }
