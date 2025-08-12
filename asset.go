@@ -62,16 +62,69 @@ func newAssetFile(outputName, mediaType string, ac *AssetConfig, initCode func()
 // assetHandlerFiles ej &mainJsHandler, &mainStyleCssHandler
 func (h *asset) UpdateContent(filePath, event string, f *contentFile) (err error) {
 
+	// Para archivos HTML, manejar theme/index.html de forma especial
+	if strings.HasSuffix(h.fileOutputName, ".html") && strings.Contains(filePath, h.themeFolder) && strings.HasSuffix(filePath, "index.html") {
+		// theme/index.html debe reemplazar completamente el contenido HTML
+		switch event {
+		case "create", "write", "modify":
+			// Limpiar solo el contenido open y close, mantener modules
+			h.contentOpen = h.contentOpen[:0]
+			h.contentClose = h.contentClose[:0]
+
+			// Analizar el contenido del theme/index.html para dividirlo en secciones
+			openContent, closeContent := parseExistingHtmlContent(string(f.content))
+
+			// Establecer el nuevo contenido
+			h.contentOpen = append(h.contentOpen, &contentFile{
+				path:    "theme-index-open.html",
+				content: []byte(openContent),
+			})
+
+			h.contentClose = append(h.contentClose, &contentFile{
+				path:    "theme-index-close.html",
+				content: []byte(closeContent),
+			})
+
+		case "remove", "delete":
+			// Si se elimina theme/index.html, volver al HTML por defecto
+			h.contentOpen = h.contentOpen[:0]
+			h.contentClose = h.contentClose[:0]
+
+			// Restaurar contenido por defecto HTML
+			h.contentOpen = append(h.contentOpen, &contentFile{
+				path: "index-open.html",
+				content: []byte(`<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title></title>
+	<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+<body>`),
+			})
+
+			h.contentClose = append(h.contentClose, &contentFile{
+				path: "index-close.html",
+				content: []byte(`<script src="main.js" type="text/javascript"></script>
+</body>
+</html>`),
+			})
+		}
+		return nil
+	}
+
+	// Lógica original para módulos HTML regulares y otros archivos
 	// por defecto los archivos de destino son contenido comun eg: modulos, archivos sueltos
 	filesToUpdate := &h.contentMiddle
 
-	// verificar si es de tema asi actualizamos como archivos apertura
-	if strings.Contains(filePath, h.themeFolder) {
+	// verificar si es de tema así actualizamos como archivos apertura (para CSS, JS, etc.)
+	// pero NO para index.html de tema (ya manejado arriba)
+	if strings.Contains(filePath, h.themeFolder) && !strings.HasSuffix(filePath, "index.html") {
 		filesToUpdate = &h.contentOpen
 	}
 
 	switch event {
-	case "create", "write":
+	case "create", "write", "modify":
 
 		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {
 			(*filesToUpdate)[idx] = f

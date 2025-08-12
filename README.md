@@ -101,9 +101,8 @@ Processes a file event (create/write).
 | `Print` | Function for logging messages |
 | `GetRuntimeInitializerJS` | Function that returns initialization JavaScript code |
 
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to submit a Pull Request.
+---
+## [Contributing](docs/CONTRIBUTING.md)
 
 ## 📄 License
 

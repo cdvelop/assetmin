@@ -52,24 +52,28 @@ func NewHtmlHandler(ac *AssetConfig) *asset {
 func (h *htmlHandler) notifyMeIfOutputFileExists(content string) {
 	// Si hay contenido, significa que el archivo de salida existe
 	if content != "" {
-		// Forzamos la limpieza completa del contenido anterior
-		h.asset.contentOpen = h.asset.contentOpen[:0]
-		h.asset.contentClose = h.asset.contentClose[:0]
-		h.asset.contentMiddle = h.asset.contentMiddle[:0]
+		// Solo analizamos el archivo existente si no hay un theme/index.html
+		// que ya haya establecido el contenido
+		if len(h.asset.contentOpen) == 1 && h.asset.contentOpen[0].path == "index-open.html" {
+			// Estamos usando el HTML por defecto, analicemos el existente
+			h.asset.contentOpen = h.asset.contentOpen[:0]
+			h.asset.contentClose = h.asset.contentClose[:0]
+			h.asset.contentMiddle = h.asset.contentMiddle[:0]
 
-		// Analizamos el contenido existente para identificar las secciones
-		openContent, closeContent := parseExistingHtmlContent(content)
+			// Analizamos el contenido existente para identificar las secciones
+			openContent, closeContent := parseExistingHtmlContent(content)
 
-		// Reemplazamos el contenido de apertura y cierre con el encontrado
-		h.asset.contentOpen = append(h.asset.contentOpen, &contentFile{
-			path:    "existing-index-open.html",
-			content: []byte(openContent),
-		})
+			// Reemplazamos el contenido de apertura y cierre con el encontrado
+			h.asset.contentOpen = append(h.asset.contentOpen, &contentFile{
+				path:    "existing-index-open.html",
+				content: []byte(openContent),
+			})
 
-		h.asset.contentClose = append(h.asset.contentClose, &contentFile{
-			path:    "existing-index-close.html",
-			content: []byte(closeContent),
-		})
+			h.asset.contentClose = append(h.asset.contentClose, &contentFile{
+				path:    "existing-index-close.html",
+				content: []byte(closeContent),
+			})
+		}
 	}
 }
 
@@ -132,5 +136,28 @@ func parseExistingHtmlContent(content string) (openContent, closeContent string)
 		splitIndex = len(lines)
 	}
 
-	return strings.Join(lines[:splitIndex], "\n"), strings.Join(lines[splitIndex:], "\n")
+	// Filtrar contenido de módulos existentes del openContent
+	openLines := lines[:splitIndex]
+	filteredOpenLines := make([]string, 0, len(openLines))
+
+	for _, line := range openLines {
+		// Omitir líneas que parecen ser módulos HTML
+		lineTrimmed := strings.TrimSpace(line)
+		// Detectar divs con clases de módulos o contenido específico
+		if strings.Contains(lineTrimmed, `class="module-`) ||
+			strings.Contains(lineTrimmed, `class="theme-`) ||
+			strings.Contains(lineTrimmed, `class=\"module-`) ||
+			strings.Contains(lineTrimmed, `class=\"theme-`) ||
+			strings.Contains(lineTrimmed, "Theme Index Content") ||
+			strings.Contains(lineTrimmed, "Test Module") {
+			continue
+		}
+		// También omitir líneas vacías consecutivas que puedan resultar del filtrado
+		if lineTrimmed == "" && len(filteredOpenLines) > 0 && strings.TrimSpace(filteredOpenLines[len(filteredOpenLines)-1]) == "" {
+			continue
+		}
+		filteredOpenLines = append(filteredOpenLines, line)
+	}
+
+	return strings.Join(filteredOpenLines, "\n"), strings.Join(lines[splitIndex:], "\n")
 }
