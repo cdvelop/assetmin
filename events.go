@@ -40,7 +40,7 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) error {
 	// Check if filePath matches any of our output paths to avoid infinite recursion
 	if c.isOutputPath(filePath) {
-		c.writeMessage("Skipping output file:", filePath)
+		//c.writeMessage("Skipping output file:", filePath)
 		return nil
 	}
 
