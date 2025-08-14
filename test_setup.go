@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// testWriter implements io.Writer for testing, redirecting output to t.Log
-type testWriter struct {
+// testLogger implements io.Writer for testing, redirecting output to t.Log
+type testLogger struct {
 	t *testing.T
 }
 
-func (tw *testWriter) Write(p []byte) (n int, err error) {
+func (tw *testLogger) Write(p []byte) (n int, err error) {
 	tw.t.Log(string(p))
 	return len(p), nil
 }
@@ -64,7 +64,7 @@ func setupTestEnv(testCase string, t *testing.T, objects ...any) *TestEnvironmen
 	config := &AssetConfig{
 		ThemeFolder:    func() string { return themeDir },
 		WebFilesFolder: func() string { return publicDir },
-		Writer:         &testWriter{t: t}, // Use testWriter instead of Print function
+		Logger:         &testLogger{t: t}, // Use testLogger instead of Print function
 		GetRuntimeInitializerJS: func() (string, error) {
 			return "\n// WebAssembly initialization code\nconst wasmMemory = new WebAssembly.Memory({initial:10, maximum:100});\n", nil
 		},

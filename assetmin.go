@@ -38,7 +38,7 @@ type AssetMin struct {
 type AssetConfig struct {
 	ThemeFolder             func() string          // eg: web/theme
 	WebFilesFolder          func() string          // eg: web/static, web/public, web/assets
-	Writer                  io.Writer              // Standard io.Writer for output messages
+	Logger                  io.Writer              // Standard io.Writer for output messages
 	GetRuntimeInitializerJS func() (string, error) // javascript code to initialize the wasm or other handlers
 }
 
@@ -75,9 +75,9 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 	return c
 }
 
-// writeMessage writes a message to the configured Writer
+// writeMessage writes a message to the configured Logger
 func (c *AssetMin) writeMessage(messages ...any) {
-	if c.Writer != nil {
+	if c.Logger != nil {
 		// Join messages with spaces like devtui's joinMessages function
 		var content string
 		var space string
@@ -85,7 +85,7 @@ func (c *AssetMin) writeMessage(messages ...any) {
 			content += space + fmt.Sprint(m)
 			space = " "
 		}
-		c.Writer.Write([]byte(content))
+		c.Logger.Write([]byte(content))
 	}
 }
 
