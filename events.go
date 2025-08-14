@@ -71,15 +71,16 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 
 	// Check event type and file existence to determine if we should write to disk
 	if !c.WriteOnDisk {
-		// If the file doesn't exist, create it regardless of event type
-		if _, err := os.Stat(fh.outputPath); os.IsNotExist(err) {
+		// Only enable writing for write/delete events, never for create events
+		// This ensures that:
+		// 1. During InitialRegistration: create events only store in memory
+		// 2. After InitialRegistration: write events enable compilation with all memory content
+		// 3. Post-deletion scenarios: the first write (not create) will trigger compilation
+		if event == "write" || event == "remove" || event == "delete" {
 			c.WriteOnDisk = true
-		} else if err == nil {
-			// File exists, only update on write or delete events
-			if event == "write" || event == "remove" || event == "delete" {
-				c.WriteOnDisk = true
-			}
 		}
+		// Create events are always memory-only when WriteOnDisk=false
+		// This prevents premature writing during InitialRegistration
 	}
 
 	if !c.WriteOnDisk {
@@ -131,6 +132,11 @@ func (f *asset) ClearMemoryFiles() {
 	f.contentOpen = []*contentFile{}
 	f.contentMiddle = []*contentFile{}
 	f.contentClose = []*contentFile{}
+}
+
+// hasContentInMemory checks if the asset has any content stored in memory
+func (f *asset) hasContentInMemory() bool {
+	return len(f.contentOpen) > 0 || len(f.contentMiddle) > 0 || len(f.contentClose) > 0
 }
 
 // isOutputPath checks if the given file path matches any of our output paths

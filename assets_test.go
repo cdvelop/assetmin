@@ -121,10 +121,10 @@ func TestAssetScenario(t *testing.T) {
 }
 
 // TestEventBasedCompilation prueba el comportamiento de compilación basado en eventos
-// cuando el archivo main ya existe (WriteOnDisk=false):
-// - Los eventos 'create' no deben actualizar el archivo main cuando existe una compilación previa
-// - Solo los eventos 'write' o 'delete' deben actualizar el archivo main cuando existe una compilación previa
-// - si el archivo main no existe, el evento 'create' debe crear el archivo main con el contenido nuevo
+// cuando WriteOnDisk=false (modo InitialRegistration):
+// - Los eventos 'create' NO deben escribir a disco, solo almacenar en memoria
+// - Solo los eventos 'write' o 'delete' deben habilitar escritura a disco
+// - Esto permite que InitialRegistration cargue todo en memoria antes de compilar
 func (env *TestEnvironment) TestEventBasedCompilation(fileExtension string) {
 	// Determinar los valores según la extensión del archivo
 	var fileName, fileContent, expectedContent string
@@ -199,11 +199,19 @@ func (env *TestEnvironment) TestEventBasedCompilation(fileExtension string) {
 
 	require.NoError(env.t, os.WriteFile(filePath2, []byte(fileContent2), 0644))
 
-	// Evento CREATE: Ahora SÍ debería crear el archivo main porque no existe una compilacion previa
+	// Evento CREATE: Con WriteOnDisk=false, NO debe crear el archivo main (solo almacenar en memoria)
 	require.NoError(env.t, env.AssetsHandler.NewFileEvent(fileName2, fileExtension, filePath2, "create"))
 
+	// Verificar que el archivo main NO fue creado aún (WriteOnDisk=false)
+	_, err = os.Stat(mainPath)
+	require.True(env.t, os.IsNotExist(err), fmt.Sprintf("El archivo main%s NO debería existir después de un evento create con WriteOnDisk=false", fileExtension))
+
+	// Evento WRITE: Ahora SÍ debería crear el archivo main con todo el contenido en memoria
+	require.NoError(env.t, os.WriteFile(filePath2, []byte(fileContent2), 0644)) // Asegurar que el archivo existe
+	require.NoError(env.t, env.AssetsHandler.NewFileEvent(fileName2, fileExtension, filePath2, "write"))
+
 	// Verificar que el archivo main fue creado con el contenido esperado
-	require.FileExists(env.t, mainPath, fmt.Sprintf("El archivo main%s debería existir después de un evento create cuando no existía previamente", fileExtension))
+	require.FileExists(env.t, mainPath, fmt.Sprintf("El archivo main%s debería existir después de un evento write", fileExtension))
 	content, err = os.ReadFile(mainPath)
 	require.NoError(env.t, err, fmt.Sprintf("No se pudo leer el archivo main%s", fileExtension))
 
