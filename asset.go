@@ -127,14 +127,44 @@ func (h *asset) UpdateContent(filePath, event string, f *contentFile) (err error
 	case "create", "write", "modify":
 
 		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {
+			// Exact path exists: replace content
 			(*filesToUpdate)[idx] = f
-		} else { // si no existe lo agregamos
-			*filesToUpdate = append(*filesToUpdate, f)
+		} else {
+			// File with this path not found. This can happen in a rename flow where
+			// a rename event is sent for the old file and a create event for the
+			// new file arrives afterwards. Instead of blindly appending and
+			// creating a duplicate, try to detect if this new file corresponds
+			// to an existing memory entry (rename case) by comparing content.
+			replaced := false
+			for i, existing := range *filesToUpdate {
+				if bytes.Equal(existing.content, f.content) {
+					// Reuse existing entry: update its path and content
+					(*filesToUpdate)[i].path = filePath
+					(*filesToUpdate)[i].content = f.content
+					replaced = true
+					break
+				}
+			}
+			if !replaced {
+				// No match found: append as new file
+				*filesToUpdate = append(*filesToUpdate, f)
+			}
 		}
 
-	case "rename": // cuando se renombra un archivo, se crea uno nuevo y se elimina el antiguo
+		// Debug: log what was updated (commented out)
+		// if h.fileOutputName == "main.js" {
+		//     fmt.Printf("DEBUG asset.UpdateContent: %s event=%s, total files=%d\n", filePath, event, len(*filesToUpdate))
+		//     for i, cf := range *filesToUpdate {
+		//         fmt.Printf("DEBUG   [%d] path=%s size=%d\n", i, cf.path, len(cf.content))
+		//     }
+		// }
 
-	// se debe buscar el contenido anterior
+	case "rename": // cuando se renombra un archivo, se crea uno nuevo y se elimina el antiguo
+		// Previously we removed the old entry here. That causes the create event
+		// for the new file to append a new entry, potentially duplicating or
+		// losing ordering information. Instead, treat rename as a no-op and let
+		// the subsequent create/write event reuse/update the existing entry.
+		// No action required here.
 
 	case "remove", "delete":
 		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {

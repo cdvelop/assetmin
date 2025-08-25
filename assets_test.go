@@ -14,6 +14,7 @@ func TestAssetScenario(t *testing.T) {
 	t.Run("uc01_empty_directory", func(t *testing.T) {
 		// en este caso se espera que la libreria pueda crear el archivo el el directorio web/public/main.js
 		// si el archivo no existe se considerara un error, la libreria debe ser capas de crear el directorio de trabajo web/public
+
 		env := setupTestEnv("uc01_empty_directory", t)
 		// 1. Create JS file and verify output
 		jsFileName := "script1.js"
@@ -77,7 +78,13 @@ func TestAssetScenario(t *testing.T) {
 	t.Run("uc05_theme_priority", func(t *testing.T) {
 		// En este caso probamos que el contenido de los archivos en la carpeta 'theme'
 		// aparezcan antes que los archivos de la carpeta 'modulos' en el archivo de salida
-		env := setupTestEnv("uc05_theme_priority", t)
+
+		funcInitJs := func() (string, error) {
+			// Simulate WebAssembly initialization code
+			return "// WebAssembly initialization code\nconst wasmMemory = new WebAssembly.Memory({initial:10, maximum:100});\n", nil
+		}
+
+		env := setupTestEnv("uc05_theme_priority", t, funcInitJs)
 
 		// Probar prioridad de theme para archivos JS
 		t.Run("js_theme_priority", func(t *testing.T) {

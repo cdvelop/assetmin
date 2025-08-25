@@ -54,19 +54,48 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 
 	c.writeMessage("Asset", extension, event, "...", filePath)
 
+	// Debug trace: log current WriteOnDisk state with timestamp
+	// c.writeMessage("DEBUG [", time.Now().Format("15:04:05.000"), "] WriteOnDisk=", c.WriteOnDisk, "for event:", event)
+
 	// Increase sleep duration significantly to allow file system operations (like write after rename) to settle
 	// fail when time is < 10ms
 	time.Sleep(20 * time.Millisecond) // Increased from 10ms
 
-	// read file content from filePath
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return errors.New(e + err.Error())
+	var content []byte
+	var err error
+
+	// For delete/remove events, we don't need to read file content since file no longer exists
+	if event == "remove" || event == "delete" {
+		// c.writeMessage("DEBUG processing delete event, skipping file read")
+		content = []byte{} // Empty content for delete events
+	} else {
+		// read file content from filePath for other events
+		content, err = os.ReadFile(filePath)
+		if err != nil {
+			return errors.New(e + err.Error())
+		}
 	}
 
 	fh, err := c.UpdateFileContentInMemory(filePath, extension, event, content) // Update contentMiddle
 	if err != nil {
 		return errors.New(e + err.Error())
+	}
+
+	// Log handler and memory state
+	if fh != nil {
+		// report counts of content arrays if available
+		var memInfo string
+		memInfo = "hasContentInMemory="
+		if fh.hasContentInMemory() {
+			memInfo += "true"
+		} else {
+			memInfo += "false"
+		}
+		// Debug: show detailed memory state
+		// c.writeMessage("DEBUG handlerOutput=", fh.outputPath, memInfo)
+		// c.writeMessage("DEBUG memory state - open:", len(fh.contentOpen), "middle:", len(fh.contentMiddle), "close:", len(fh.contentClose))
+
+		// Log file paths in memory (omitted to reduce debug noise)
 	}
 
 	// Check event type and file existence to determine if we should write to disk
@@ -87,9 +116,20 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 		return nil
 	}
 
+	// c.writeMessage("DEBUG proceeding to write to disk; WriteOnDisk=", c.WriteOnDisk)
+
 	// Process content into a buffer
 	var buf bytes.Buffer
 	fh.WriteContent(&buf)
+
+	// Debug: log content counts and preview
+	bufLen := buf.Len()
+	previewLen := bufLen
+	if previewLen > 100 {
+		previewLen = 100
+	}
+	// c.writeMessage("DEBUG contentOpen=", len(fh.contentOpen), "contentMiddle=", len(fh.contentMiddle), "contentClose=", len(fh.contentClose))
+	// c.writeMessage("DEBUG raw buffer size=", bufLen, "preview:", string(buf.Bytes()[:previewLen]))
 
 	// Minify the content
 	var minifiedBuf bytes.Buffer
@@ -98,6 +138,13 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 	}
 
 	// Write to disk
+	// c.writeMessage("DEBUG outputPath=", fh.outputPath, "minifiedSize=", minifiedBuf.Len())
+	minifiedLen := minifiedBuf.Len()
+	contentPreviewLen := minifiedLen
+	if contentPreviewLen > 200 {
+		contentPreviewLen = 200
+	}
+	// c.writeMessage("DEBUG writing content:", string(minifiedBuf.Bytes()[:contentPreviewLen]))
 	if err := FileWrite(fh.outputPath, minifiedBuf); err != nil {
 		return errors.New(e + " File write error: " + err.Error())
 	}

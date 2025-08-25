@@ -66,11 +66,14 @@ func setupTestEnv(testCase string, t *testing.T, objects ...any) *TestEnvironmen
 		WebFilesFolder: func() string { return publicDir },
 		Logger:         &testLogger{t: t}, // Use testLogger instead of Print function
 		GetRuntimeInitializerJS: func() (string, error) {
-			return "\n// WebAssembly initialization code\nconst wasmMemory = new WebAssembly.Memory({initial:10, maximum:100});\n", nil
+			return "", nil
 		},
 	}
 
+	// \n// WebAssembly initialization code\nconst wasmMemory = new WebAssembly.Memory({initial:10, maximum:100});\n
+
 	// Check if any of the objects is a contentFile and write it to disk
+	// Also allow passing a func() (string, error) to override GetRuntimeInitializerJS
 	for _, obj := range objects {
 		if file, ok := obj.(*contentFile); ok {
 			if err := file.WriteToDisk(); err != nil {
@@ -78,6 +81,11 @@ func setupTestEnv(testCase string, t *testing.T, objects ...any) *TestEnvironmen
 			} else {
 				t.Logf("Successfully wrote file to %s", file.path)
 			}
+		}
+
+		// add WebAssembly initialization code when a function is provided
+		if funcInitJs, ok := obj.(func() (string, error)); ok {
+			config.GetRuntimeInitializerJS = funcInitJs
 		}
 	}
 
