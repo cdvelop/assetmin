@@ -52,7 +52,7 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 		return errors.New(e + "filePath is empty")
 	}
 
-	c.writeMessage("Asset", extension, event, "...", filePath)
+	c.writeMessage(extension, event, "...", filePath)
 
 	// Debug trace: log current WriteOnDisk state with timestamp
 	// c.writeMessage("DEBUG [", time.Now().Format("15:04:05.000"), "] WriteOnDisk=", c.WriteOnDisk, "for event:", event)
