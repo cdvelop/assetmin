@@ -14,11 +14,34 @@ import (
 // Then, when a new empty file is created the output should still remain unchanged.
 // Finally, after writing content to the new file and sending a "write" event,
 // the output should contain the previous files plus the new one.
+// UPDATED: Now includes mock TinyWasm handler to verify WASM JS initialization is included.
 func TestJSEventFlow(t *testing.T) {
 
-	// Setup test environment
+	// Mock TinyWasm handler that simulates different JavaScript for different modes
+	currentMode := "go" // Initial mode
+	mockTinyWasmHandler := func() (string, error) {
+		switch currentMode {
+		case "go":
+			return `
+// Go WASM Runtime
+const goRuntime = new Go();
+WebAssembly.instantiateStreaming(fetch("main.wasm"), goRuntime.importObject).then((result) => {
+	goRuntime.run(result.instance);
+});`, nil
+		case "tinygo":
+			return `
+// TinyGo WASM Runtime 
+const tinyGoRuntime = new Go();
+WebAssembly.instantiateStreaming(fetch("main.wasm"), tinyGoRuntime.importObject).then((result) => {
+	tinyGoRuntime.run(result.instance);
+});`, nil
+		default:
+			return "", nil
+		}
+	}
 
-	env := setupTestEnv("js_event_flow", t)
+	// Setup test environment with mock TinyWasm handler
+	env := setupTestEnv("js_event_flow", t, mockTinyWasmHandler)
 	//defer env.CleanDirectory()
 
 	// Prepare three distinct JS files in different directories
@@ -47,6 +70,12 @@ func TestJSEventFlow(t *testing.T) {
 	require.FileExists(t, env.MainJsPath, "main.js must exist after initial write events")
 	initialMain, err := os.ReadFile(env.MainJsPath)
 	require.NoError(t, err, "unable to read main.js after initial compilation")
+
+	// Verify that mock WASM JS is included in main.js
+	initialMainStr := string(initialMain)
+	require.Contains(t, initialMainStr, "goRuntime", "main.js should contain mock Go WASM runtime initialization")
+	require.Contains(t, initialMainStr, "WebAssembly.instantiateStreaming", "main.js should contain WASM instantiation code")
+	t.Log("✓ Verified: main.js contains Go WASM initialization JavaScript")
 
 	// 1) Send "create" events for the same three files (simulating watcher initial registration)
 	t.Log("Phase 1: sending 'create' events for existing files — expect no change")
@@ -82,6 +111,24 @@ func TestJSEventFlow(t *testing.T) {
 	require.Contains(t, finalStr, "Module Two", "final main.js should contain content from module2/script2.js")
 	require.Contains(t, finalStr, "Theme Code", "final main.js should contain content from web/theme/theme.js")
 	require.Contains(t, finalStr, "New Module added", "final main.js should contain the newly written file content")
+	require.Contains(t, finalStr, "goRuntime", "final main.js should still contain Go WASM runtime")
+
+	// 3.5) Test WASM mode change: Change mock to TinyGo mode and trigger regeneration
+	t.Log("Phase 3.5: testing WASM mode change from Go to TinyGo")
+	currentMode = "tinygo" // Change mock mode
+
+	// Trigger a JS file event to force regeneration
+	dummyJsPath := filepath.Join(env.BaseDir, "modules", "dummy.js")
+	require.NoError(t, os.WriteFile(dummyJsPath, []byte("console.log('trigger');"), 0644))
+	require.NoError(t, env.AssetsHandler.NewFileEvent("dummy.js", ".js", dummyJsPath, "write"))
+
+	afterModeChange, err := os.ReadFile(env.MainJsPath)
+	require.NoError(t, err, "unable to read main.js after mode change")
+	afterModeChangeStr := string(afterModeChange)
+
+	require.Contains(t, afterModeChangeStr, "tinyGoRuntime", "main.js should contain TinyGo WASM runtime after mode change")
+	require.NotContains(t, afterModeChangeStr, "goRuntime", "main.js should NOT contain Go WASM runtime after mode change")
+	t.Log("✓ Verified: WASM JavaScript changes when mock mode changes")
 
 	// 4) Test rename operation: rename one of the existing files
 	t.Log("Phase 4: testing rename operation")
