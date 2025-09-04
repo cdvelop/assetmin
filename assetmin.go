@@ -75,6 +75,14 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 	return c
 }
 
+func (c *AssetMin) MainInputFileRelativePath() string {
+	return c.indexHtmlHandler.themeFolder
+}
+
+func (c *AssetMin) SupportedExtensions() []string {
+	return []string{".js", ".css", ".svg", ".html"}
+}
+
 // writeMessage writes a message to the configured Logger
 func (c *AssetMin) writeMessage(messages ...any) {
 	if c.Logger != nil {
