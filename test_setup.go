@@ -8,16 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// testLogger implements io.Writer for testing, redirecting output to t.Log
-type testLogger struct {
-	t *testing.T
-}
-
-func (tw *testLogger) Write(p []byte) (n int, err error) {
-	tw.t.Log(string(p))
-	return len(p), nil
-}
-
 // TestEnvironment holds all the paths and components needed for asset tests
 type TestEnvironment struct {
 	BaseDir       string
@@ -64,7 +54,9 @@ func setupTestEnv(testCase string, t *testing.T, objects ...any) *TestEnvironmen
 	config := &AssetConfig{
 		ThemeFolder:    func() string { return themeDir },
 		WebFilesFolder: func() string { return publicDir },
-		Logger:         &testLogger{t: t}, // Use testLogger instead of Print function
+		Logger: func(message ...any) {
+			t.Log(message...)
+		},
 		GetRuntimeInitializerJS: func() (string, error) {
 			return "", nil
 		},
