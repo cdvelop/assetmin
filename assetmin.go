@@ -1,8 +1,6 @@
 package assetmin
 
 import (
-	"fmt"
-	"io"
 	"os"
 	"regexp"
 
@@ -36,9 +34,9 @@ type AssetMin struct {
 }
 
 type AssetConfig struct {
-	ThemeFolder             func() string          // eg: web/theme
-	WebFilesFolder          func() string          // eg: web/static, web/public, web/assets
-	Logger                  io.Writer              // Standard io.Writer for output messages
+	ThemeFolder             func() string        // eg: web/theme
+	WebFilesFolder          func() string        // eg: web/static, web/public, web/assets
+	Logger                  func(message ...any) // Renamed from io.Writer to a function type
 	GetRuntimeInitializerJS func() (string, error) // javascript code to initialize the wasm or other handlers
 }
 
@@ -86,14 +84,7 @@ func (c *AssetMin) SupportedExtensions() []string {
 // writeMessage writes a message to the configured Logger
 func (c *AssetMin) writeMessage(messages ...any) {
 	if c.Logger != nil {
-		// Join messages with spaces like devtui's joinMessages function
-		var content string
-		var space string
-		for _, m := range messages {
-			content += space + fmt.Sprint(m)
-			space = " "
-		}
-		c.Logger.Write([]byte(content))
+		c.Logger(messages...)
 	}
 }
 
