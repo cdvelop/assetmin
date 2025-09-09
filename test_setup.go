@@ -81,9 +81,9 @@ func setupTestEnv(testCase string, t *testing.T, objects ...any) *TestEnvironmen
 		}
 	}
 
-	// Create asset handler with disk writing enabled
+	// Create asset handler; do NOT force WriteOnDisk here.
+	// The library should detect existing output files and enable writing itself.
 	assetsHandler := NewAssetMin(config)
-	assetsHandler.WriteOnDisk = true
 
 	// Create only the base directory if it doesn't exist
 	err := os.MkdirAll(baseDir, 0755)

@@ -42,7 +42,7 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 	c := &AssetMin{
 		AssetConfig: ac,
 		min:         minify.New(),
-		WriteOnDisk: false, // Default to false
+		WriteOnDisk: true, // Default to true so library writes output by default; tests may disable it explicitly
 		// initialize file name fields with previous constant values
 		jsMainFileName:   "main.js",
 		cssMainFileName:  "style.css",
@@ -73,6 +73,16 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 
 	// Check if output files already exist
 	c.NotifyIfOutputFilesExist()
+
+	// If any output file already exists on disk, enable writing to disk so
+	// the handler behaves as if it had been previously generating output.
+	// This avoids tests (and real usage) needing to force WriteOnDisk externally.
+	if fileExists(c.mainStyleCssHandler.outputPath) != "" ||
+		fileExists(c.mainJsHandler.outputPath) != "" ||
+		fileExists(c.spriteSvgHandler.outputPath) != "" ||
+		fileExists(c.indexHtmlHandler.outputPath) != "" {
+		c.WriteOnDisk = true
+	}
 
 	return c
 }
