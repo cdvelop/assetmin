@@ -42,14 +42,14 @@ func TestOutputFileHandling(t *testing.T) {
 		// Test for Windows-style path
 		t.Run("windows_path", func(t *testing.T) {
 			windowsPath := filepath.FromSlash(env.MainJsPath)
-			err := env.AssetsHandler.NewFileEvent(jsMainFileName, ".js", windowsPath, "write")
+			err := env.AssetsHandler.NewFileEvent(env.AssetsHandler.jsMainFileName, ".js", windowsPath, "write")
 			assert.NoError(t, err, "Should handle Windows output path without error")
 		})
 
 		// Test for Unix-style path
 		t.Run("unix_path", func(t *testing.T) {
 			unixPath := filepath.ToSlash(env.MainJsPath)
-			err := env.AssetsHandler.NewFileEvent(jsMainFileName, ".js", unixPath, "write")
+			err := env.AssetsHandler.NewFileEvent(env.AssetsHandler.jsMainFileName, ".js", unixPath, "write")
 			assert.NoError(t, err, "Should handle Unix output path without error")
 		})
 

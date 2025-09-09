@@ -4,23 +4,28 @@ import "strings"
 
 type htmlHandler struct {
 	*asset
+	cssName string
+	jsName  string
 }
 
 // generateStylesheetLink returns HTML tag for linking a CSS stylesheet
-func generateStylesheetLink() []byte {
-	return []byte(`<link rel="stylesheet" href="` + cssMainFileName + `" type="text/css" />`)
+func (h *htmlHandler) generateStylesheetLink() []byte {
+	return []byte(`<link rel="stylesheet" href="` + h.cssName + `" type="text/css" />`)
 }
 
 // generateJavaScriptTag returns HTML script tag for a JavaScript file
-func generateJavaScriptTag() []byte {
-	return []byte(`<script src="` + jsMainFileName + `" type="text/javascript"></script>`)
+func (h *htmlHandler) generateJavaScriptTag() []byte {
+	return []byte(`<script src="` + h.jsName + `" type="text/javascript"></script>`)
 }
 
-func NewHtmlHandler(ac *AssetConfig) *asset {
-	af := newAssetFile(htmlMainFileName, "text/html", ac, nil)
+// NewHtmlHandler creates an HTML asset handler using the provided output filename
+func NewHtmlHandler(ac *AssetConfig, outputName, cssName, jsName string) *asset {
+	af := newAssetFile(outputName, "text/html", ac, nil)
 
 	hh := &htmlHandler{
-		asset: af,
+		asset:   af,
+		cssName: cssName,
+		jsName:  jsName,
 	}
 	// Configurar el handler de notificación de archivo de salida
 	af.notifyMeIfOutputFileExists = hh.notifyMeIfOutputFileExists
@@ -33,7 +38,7 @@ func NewHtmlHandler(ac *AssetConfig) *asset {
 <head>
 	<meta charset="utf-8">
 	<title></title>
-	` + string(generateStylesheetLink()) + `
+	` + string(hh.generateStylesheetLink()) + `
 </head>
 <body>`),
 	})
@@ -41,7 +46,7 @@ func NewHtmlHandler(ac *AssetConfig) *asset {
 	// default marcador de cierre index HTML
 	af.contentClose = append(af.contentClose, &contentFile{
 		path: "index-close.html",
-		content: []byte(string(generateJavaScriptTag()) + `
+		content: []byte(string(hh.generateJavaScriptTag()) + `
 </body>
 </html>`),
 	})

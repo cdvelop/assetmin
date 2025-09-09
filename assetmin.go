@@ -13,13 +13,6 @@ import (
 	"github.com/tdewolff/minify/v2/svg"
 )
 
-const (
-	jsMainFileName   = "main.js"    // eg: "main.js"
-	cssMainFileName  = "style.css"  // eg: "style.css"
-	svgMainFileName  = "sprite.svg" // eg: "sprite.svg"
-	htmlMainFileName = "index.html" // eg: "index.html"
-)
-
 type AssetMin struct {
 	mu sync.Mutex // Added mutex for synchronization
 	*AssetConfig
@@ -31,25 +24,36 @@ type AssetMin struct {
 	min *minify.M
 
 	WriteOnDisk bool // Indica si se debe escribir en disco
+
+	jsMainFileName   string // eg: main.js
+	cssMainFileName  string // eg: style.css
+	svgMainFileName  string // eg: sprite.svg
+	htmlMainFileName string // eg: index.html
 }
 
 type AssetConfig struct {
-	ThemeFolder             func() string        // eg: web/theme
-	WebFilesFolder          func() string        // eg: web/static, web/public, web/assets
-	Logger                  func(message ...any) // Renamed from io.Writer to a function type
+	ThemeFolder             func() string          // eg: web/theme
+	WebFilesFolder          func() string          // eg: web/static, web/public, web/assets
+	Logger                  func(message ...any)   // Renamed from io.Writer to a function type
 	GetRuntimeInitializerJS func() (string, error) // javascript code to initialize the wasm or other handlers
 }
 
 func NewAssetMin(ac *AssetConfig) *AssetMin {
 	c := &AssetMin{
-		AssetConfig:         ac,
-		mainStyleCssHandler: newAssetFile(cssMainFileName, "text/css", ac, nil),
-		mainJsHandler:       newAssetFile(jsMainFileName, "text/javascript", ac, ac.GetRuntimeInitializerJS),
-		spriteSvgHandler:    NewSvgHandler(ac),
-		indexHtmlHandler:    NewHtmlHandler(ac),
-		min:                 minify.New(),
-		WriteOnDisk:         false, // Default to false
+		AssetConfig: ac,
+		min:         minify.New(),
+		WriteOnDisk: false, // Default to false
+		// initialize file name fields with previous constant values
+		jsMainFileName:   "main.js",
+		cssMainFileName:  "style.css",
+		svgMainFileName:  "sprite.svg",
+		htmlMainFileName: "index.html",
 	}
+	// handlers will be initialized after filename fields are set
+	c.mainStyleCssHandler = newAssetFile(c.cssMainFileName, "text/css", ac, nil)
+	c.mainJsHandler = newAssetFile(c.jsMainFileName, "text/javascript", ac, ac.GetRuntimeInitializerJS)
+	c.spriteSvgHandler = NewSvgHandler(ac, c.svgMainFileName)
+	c.indexHtmlHandler = NewHtmlHandler(ac, c.htmlMainFileName, c.cssMainFileName, c.jsMainFileName)
 	c.min.Add("text/html", &html.Minifier{
 		KeepDocumentTags: true, // para mantener las etiquetas html,head,body. tambien mantiene las etiquetas de cierre
 		KeepEndTags:      true, // preserve all end tags
