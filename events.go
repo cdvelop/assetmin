@@ -172,7 +172,12 @@ func (c *AssetMin) startCodeJS() (out string, err error) {
 	if err != nil {
 		return "", errors.New("startCodeJS " + err.Error())
 	}
-	out += js
+
+	// Remove any leading 'use strict' in the initializer to avoid duplication.
+	// The initializer comes from GetRuntimeInitializerJS and doesn't go through
+	// UpdateFileContentInMemory, so we need to clean it here.
+	clean := stripLeadingUseStrict([]byte(js))
+	out += string(clean)
 
 	return
 }

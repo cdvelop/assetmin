@@ -1,67 +1,108 @@
 package assetmin
 
-import "bytes"
+import "strings"
 
-// stripLeadingUseStrict removes a leading "use strict" directive (with or
-// without trailing semicolon and optional surrounding whitespace/newline)
-// from the provided JS file content. It only removes a directive at the very
-// start of the file. The function returns a new byte slice.
+// stripLeadingUseStrict removes the first "use strict" directive found at the
+// beginning of a JavaScript file, even if preceded by comments or whitespace.
+// It removes the directive along with its optional semicolon and following whitespace/newline.
 func stripLeadingUseStrict(b []byte) []byte {
 	if len(b) == 0 {
 		return b
 	}
 
-	// Consider possible variants: "use strict"; or 'use strict';
-	// Trim left whitespace and newlines first to detect directive at beginning.
-	trimmed := bytes.TrimLeft(b, "\t \n\r\f\v")
-	lower := bytes.ToLower(trimmed)
-
-	// Check double-quoted
-	if bytes.HasPrefix(lower, []byte("\"use strict\"")) || bytes.HasPrefix(lower, []byte("'use strict'")) {
-		// Find end of the directive
-		// advance past the closing quote
-		i := 0
-		for i < len(trimmed) && trimmed[i] != '\n' {
-			// stop at first newline; we'll strip up to there
-			i++
-		}
-		// If the first line didn't contain a newline we still want to remove the
-		// directive plus any following semicolon and whitespace. So compute a
-		// conservative end index by scanning for the first character after the
-		// closing quote and optional semicolon.
-		firstLine := trimmed[:i]
-		// find the index after the closing quote
-		end := -1
-		for j := 0; j < len(firstLine); j++ {
-			ch := firstLine[j]
-			if ch == '"' || ch == '\'' {
-				// attempt to find matching closing quote after this
-				// naive but good enough: find next same quote
-				for k := j + 1; k < len(firstLine); k++ {
-					if firstLine[k] == ch {
-						// position after closing quote
-						end = k + 1
-						break
-					}
-				}
-				break
-			}
-		}
-		if end == -1 {
-			// malformed, return original
-			return b
-		}
-		// skip trailing semicolon and whitespace/newline
-		for end < len(firstLine) && (firstLine[end] == ';' || firstLine[end] == ' ' || firstLine[end] == '\t' || firstLine[end] == '\r') {
-			end++
-		}
-		// compute remainder starting from trimmed[end:]
-		remainder := trimmed[end:]
-		// Now reattach any leading whitespace that was trimmed originally
-		// that existed before the directive. We previously removed all left
-		// whitespace, so just return remainder (no leading whitespace)
-		return remainder
+	content := string(b)
+	patterns := []string{
+		"\"use strict\"",
+		"'use strict'",
 	}
 
-	return b
+	// Find the first occurrence of any "use strict" pattern
+	var foundPos = -1
+	var foundPattern string
+
+	for _, pattern := range patterns {
+		pos := strings.Index(content, pattern)
+		if pos != -1 && (foundPos == -1 || pos < foundPos) {
+			foundPos = pos
+			foundPattern = pattern
+		}
+	}
+
+	// If no "use strict" found, return original
+	if foundPos == -1 {
+		return b
+	}
+
+	// Check if this "use strict" is at the logical beginning of the file
+	// (i.e., only comments, whitespace, or nothing before it)
+	beforeDirective := content[:foundPos]
+	if !isOnlyCommentsAndWhitespace(beforeDirective) {
+		return b // Not at the beginning, don't remove
+	}
+
+	// Found "use strict" at the beginning, remove it
+	pos := foundPos + len(foundPattern)
+
+	// Skip optional semicolon
+	if pos < len(content) && content[pos] == ';' {
+		pos++
+	}
+
+	// Skip whitespace after semicolon but stop at newline
+	for pos < len(content) && (content[pos] == ' ' || content[pos] == '\t' || content[pos] == '\r') {
+		pos++
+	}
+
+	// Skip one newline if present
+	if pos < len(content) && content[pos] == '\n' {
+		pos++
+	}
+
+	// Return the remainder
+	if pos < len(content) {
+		return []byte(content[pos:])
+	}
+	return []byte{}
+}
+
+// isOnlyCommentsAndWhitespace checks if a string contains only comments and whitespace
+func isOnlyCommentsAndWhitespace(s string) bool {
+	i := 0
+	for i < len(s) {
+		ch := s[i]
+
+		// Skip whitespace
+		if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' {
+			i++
+			continue
+		}
+
+		// Check for single-line comment //
+		if i+1 < len(s) && s[i] == '/' && s[i+1] == '/' {
+			// Skip to end of line
+			for i < len(s) && s[i] != '\n' {
+				i++
+			}
+			continue
+		}
+
+		// Check for multi-line comment /* */
+		if i+1 < len(s) && s[i] == '/' && s[i+1] == '*' {
+			i += 2
+			// Find closing */
+			for i+1 < len(s) {
+				if s[i] == '*' && s[i+1] == '/' {
+					i += 2
+					break
+				}
+				i++
+			}
+			continue
+		}
+
+		// Found non-comment, non-whitespace character
+		return false
+	}
+
+	return true
 }
