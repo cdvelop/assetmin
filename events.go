@@ -21,6 +21,9 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 		return c.mainStyleCssHandler, err
 
 	case ".js":
+		// Remove a leading "use strict" directive from incoming files to avoid
+		// duplicating the directive which we add globally in startCodeJS.
+		file.content = stripLeadingUseStrict(file.content)
 		err := c.mainJsHandler.UpdateContent(filePath, event, file)
 		return c.mainJsHandler, err
 
