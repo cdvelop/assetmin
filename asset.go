@@ -123,6 +123,17 @@ func (h *asset) UpdateContent(filePath, event string, f *contentFile) (err error
 		filesToUpdate = &h.contentOpen
 	}
 
+	// Para archivos HTML, verificar si es un documento HTML completo
+	// Si es así, debe ser ignorado ya que no es un módulo/fragmento
+	if strings.HasSuffix(h.fileOutputName, ".html") && strings.HasSuffix(filePath, ".html") {
+		// Verificar si el contenido es un documento HTML completo
+		if isCompleteHtmlDocument(string(f.content)) {
+			// Es un documento completo (template), ignorarlo
+			// No procesamos templates como módulos
+			return nil
+		}
+	}
+
 	switch event {
 	case "create", "write", "modify":
 

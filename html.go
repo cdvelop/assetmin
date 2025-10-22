@@ -2,6 +2,29 @@ package assetmin
 
 import "strings"
 
+// isCompleteHtmlDocument checks if the content represents a complete HTML document
+// rather than an HTML fragment/module. Complete documents have doctype, html, and body tags.
+func isCompleteHtmlDocument(content string) bool {
+	contentLower := strings.ToLower(content)
+
+	// Check for doctype declaration
+	hasDoctype := strings.Contains(contentLower, "<!doctype html>") ||
+		strings.Contains(contentLower, "<!doctype html ")
+
+	// Check for html opening tag
+	hasHtmlOpen := strings.Contains(contentLower, "<html>") ||
+		strings.Contains(contentLower, "<html ")
+
+	// Check for body closing tag
+	hasBodyClose := strings.Contains(contentLower, "</body>")
+
+	// Check for html closing tag
+	hasHtmlClose := strings.Contains(contentLower, "</html>")
+
+	// If it has all these elements, it's a complete HTML document
+	return hasDoctype && hasHtmlOpen && hasBodyClose && hasHtmlClose
+}
+
 type htmlHandler struct {
 	*asset
 	cssName string
