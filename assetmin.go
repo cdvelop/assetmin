@@ -25,9 +25,9 @@ type AssetMin struct {
 
 	WriteOnDisk bool // Indica si se debe escribir en disco
 
-	jsMainFileName   string // eg: main.js
+	jsMainFileName   string // eg: script.js
 	cssMainFileName  string // eg: style.css
-	svgMainFileName  string // eg: sprite.svg
+	svgMainFileName  string // eg: icons.svg
 	htmlMainFileName string // eg: index.html
 }
 
@@ -44,9 +44,9 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 		min:         minify.New(),
 		WriteOnDisk: true, // Default to true so library writes output by default; tests may disable it explicitly
 		// initialize file name fields with previous constant values
-		jsMainFileName:   "main.js",
+		jsMainFileName:   "script.js",
 		cssMainFileName:  "style.css",
-		svgMainFileName:  "sprite.svg",
+		svgMainFileName:  "icons.svg",
 		htmlMainFileName: "index.html",
 	}
 	// handlers will be initialized after filename fields are set

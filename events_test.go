@@ -36,7 +36,7 @@ func TestOutputFileHandling(t *testing.T) {
 		require.NoError(t, env.AssetsHandler.NewFileEvent("initial.js", ".js", initialJsFile, "create"))
 
 		// Verify main.js exists
-		require.FileExists(t, env.MainJsPath, "The main.js file should be created")
+		require.FileExists(t, env.MainJsPath, "The script.js file should be created")
 
 		// Test that directly modifying the output file doesn't cause issues
 		// Test for Windows-style path
@@ -75,9 +75,9 @@ func TestOutputFileHandling(t *testing.T) {
 			upperCasePath := lowerCasePath
 			// Convert just the filename part to uppercase
 			dir, _ := filepath.Split(upperCasePath)
-			upperCasePath = filepath.Join(dir, "MAIN.JS")
+			upperCasePath = filepath.Join(dir, "SCRIPT.JS")
 
-			err := env.AssetsHandler.NewFileEvent("MAIN.JS", ".js", upperCasePath, "write")
+			err := env.AssetsHandler.NewFileEvent("SCRIPT.JS", ".js", upperCasePath, "write")
 			// This should still be handled properly
 			assert.NoError(t, err, "Should handle case differences in path without error")
 		})
