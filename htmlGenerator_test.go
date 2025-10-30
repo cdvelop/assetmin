@@ -199,3 +199,449 @@ func anyToString(v any) string {
 	}
 	return strings.TrimSpace(strings.TrimPrefix(strings.TrimSuffix(strings.TrimSpace(v.(interface{ String() string }).String()), "\n"), "\n"))
 }
+
+func TestCreateDefaultCssIfNotExist(t *testing.T) {
+	t.Run("creates CSS file when it doesn't exist", func(t *testing.T) {
+		tempDir := t.TempDir()
+		themeDir := filepath.Join(tempDir, "theme")
+		outputDir := filepath.Join(tempDir, "output")
+
+		if err := os.MkdirAll(themeDir, 0755); err != nil {
+			t.Fatalf("Failed to create theme directory: %v", err)
+		}
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			t.Fatalf("Failed to create output directory: %v", err)
+		}
+
+		var logMessages []string
+		logger := func(messages ...any) {
+			var strMessages []string
+			for _, msg := range messages {
+				strMessages = append(strMessages, anyToString(msg))
+			}
+			logMessages = append(logMessages, strings.Join(strMessages, " "))
+		}
+
+		ac := &AssetConfig{
+			ThemeFolder:    func() string { return themeDir },
+			WebFilesFolder: func() string { return outputDir },
+			Logger:         logger,
+		}
+		am := NewAssetMin(ac)
+
+		result := am.CreateDefaultCssIfNotExist()
+
+		if result != am {
+			t.Error("Expected method to return *AssetMin instance for chaining")
+		}
+
+		targetPath := filepath.Join(themeDir, "style.css")
+		content, err := os.ReadFile(targetPath)
+		if err != nil {
+			t.Fatalf("Failed to read generated file: %v", err)
+		}
+
+		contentStr := string(content)
+		if !strings.Contains(contentStr, "body") {
+			t.Error("Expected CSS to contain 'body' selector")
+		}
+		if !strings.Contains(contentStr, "font-family") {
+			t.Error("Expected CSS to contain 'font-family' property")
+		}
+
+		found := false
+		for _, msg := range logMessages {
+			if strings.Contains(msg, "Generated CSS file at") {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Error("Expected log message about file generation")
+		}
+	})
+
+	t.Run("skips creation when CSS already exists", func(t *testing.T) {
+		tempDir := t.TempDir()
+		themeDir := filepath.Join(tempDir, "theme")
+		outputDir := filepath.Join(tempDir, "output")
+
+		if err := os.MkdirAll(themeDir, 0755); err != nil {
+			t.Fatalf("Failed to create theme directory: %v", err)
+		}
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			t.Fatalf("Failed to create output directory: %v", err)
+		}
+
+		existingContent := "/* existing CSS */"
+		existingPath := filepath.Join(themeDir, "style.css")
+		if err := os.WriteFile(existingPath, []byte(existingContent), 0644); err != nil {
+			t.Fatalf("Failed to create existing file: %v", err)
+		}
+
+		var logMessages []string
+		logger := func(messages ...any) {
+			var strMessages []string
+			for _, msg := range messages {
+				strMessages = append(strMessages, anyToString(msg))
+			}
+			logMessages = append(logMessages, strings.Join(strMessages, " "))
+		}
+
+		ac := &AssetConfig{
+			ThemeFolder:    func() string { return themeDir },
+			WebFilesFolder: func() string { return outputDir },
+			Logger:         logger,
+		}
+		am := NewAssetMin(ac)
+
+		result := am.CreateDefaultCssIfNotExist()
+
+		if result != am {
+			t.Error("Expected method to return *AssetMin instance for chaining")
+		}
+
+		content, err := os.ReadFile(existingPath)
+		if err != nil {
+			t.Fatalf("Failed to read existing file: %v", err)
+		}
+
+		if string(content) != existingContent {
+			t.Error("Expected existing file content to remain unchanged")
+		}
+
+		found := false
+		for _, msg := range logMessages {
+			if strings.Contains(msg, "already exists") && strings.Contains(msg, "skipping generation") {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Error("Expected log message about skipping file generation")
+		}
+	})
+}
+
+func TestCreateDefaultJsIfNotExist(t *testing.T) {
+	t.Run("creates JS file when it doesn't exist", func(t *testing.T) {
+		tempDir := t.TempDir()
+		themeDir := filepath.Join(tempDir, "theme")
+		outputDir := filepath.Join(tempDir, "output")
+
+		if err := os.MkdirAll(themeDir, 0755); err != nil {
+			t.Fatalf("Failed to create theme directory: %v", err)
+		}
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			t.Fatalf("Failed to create output directory: %v", err)
+		}
+
+		var logMessages []string
+		logger := func(messages ...any) {
+			var strMessages []string
+			for _, msg := range messages {
+				strMessages = append(strMessages, anyToString(msg))
+			}
+			logMessages = append(logMessages, strings.Join(strMessages, " "))
+		}
+
+		ac := &AssetConfig{
+			ThemeFolder:    func() string { return themeDir },
+			WebFilesFolder: func() string { return outputDir },
+			Logger:         logger,
+		}
+		am := NewAssetMin(ac)
+
+		result := am.CreateDefaultJsIfNotExist()
+
+		if result != am {
+			t.Error("Expected method to return *AssetMin instance for chaining")
+		}
+
+		targetPath := filepath.Join(themeDir, "script.js")
+		content, err := os.ReadFile(targetPath)
+		if err != nil {
+			t.Fatalf("Failed to read generated file: %v", err)
+		}
+
+		contentStr := string(content)
+		if !strings.Contains(contentStr, "console.log") {
+			t.Error("Expected JS to contain 'console.log'")
+		}
+		if !strings.Contains(contentStr, "DOMContentLoaded") {
+			t.Error("Expected JS to contain 'DOMContentLoaded'")
+		}
+
+		found := false
+		for _, msg := range logMessages {
+			if strings.Contains(msg, "Generated JS file at") {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Error("Expected log message about file generation")
+		}
+	})
+
+	t.Run("skips creation when JS already exists", func(t *testing.T) {
+		tempDir := t.TempDir()
+		themeDir := filepath.Join(tempDir, "theme")
+		outputDir := filepath.Join(tempDir, "output")
+
+		if err := os.MkdirAll(themeDir, 0755); err != nil {
+			t.Fatalf("Failed to create theme directory: %v", err)
+		}
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			t.Fatalf("Failed to create output directory: %v", err)
+		}
+
+		existingContent := "// existing JS"
+		existingPath := filepath.Join(themeDir, "script.js")
+		if err := os.WriteFile(existingPath, []byte(existingContent), 0644); err != nil {
+			t.Fatalf("Failed to create existing file: %v", err)
+		}
+
+		var logMessages []string
+		logger := func(messages ...any) {
+			var strMessages []string
+			for _, msg := range messages {
+				strMessages = append(strMessages, anyToString(msg))
+			}
+			logMessages = append(logMessages, strings.Join(strMessages, " "))
+		}
+
+		ac := &AssetConfig{
+			ThemeFolder:    func() string { return themeDir },
+			WebFilesFolder: func() string { return outputDir },
+			Logger:         logger,
+		}
+		am := NewAssetMin(ac)
+
+		result := am.CreateDefaultJsIfNotExist()
+
+		if result != am {
+			t.Error("Expected method to return *AssetMin instance for chaining")
+		}
+
+		content, err := os.ReadFile(existingPath)
+		if err != nil {
+			t.Fatalf("Failed to read existing file: %v", err)
+		}
+
+		if string(content) != existingContent {
+			t.Error("Expected existing file content to remain unchanged")
+		}
+
+		found := false
+		for _, msg := range logMessages {
+			if strings.Contains(msg, "already exists") && strings.Contains(msg, "skipping generation") {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Error("Expected log message about skipping file generation")
+		}
+	})
+
+	t.Run("test method chaining", func(t *testing.T) {
+		tempDir := t.TempDir()
+		themeDir := filepath.Join(tempDir, "theme")
+		outputDir := filepath.Join(tempDir, "output")
+
+		if err := os.MkdirAll(themeDir, 0755); err != nil {
+			t.Fatalf("Failed to create theme directory: %v", err)
+		}
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			t.Fatalf("Failed to create output directory: %v", err)
+		}
+
+		ac := &AssetConfig{
+			ThemeFolder:    func() string { return themeDir },
+			WebFilesFolder: func() string { return outputDir },
+			Logger:         func(messages ...any) {},
+		}
+		am := NewAssetMin(ac)
+
+		// Test chaining all three methods
+		result := am.CreateDefaultIndexHtmlIfNotExist().
+			CreateDefaultCssIfNotExist().
+			CreateDefaultJsIfNotExist()
+
+		if result != am {
+			t.Error("Expected chained methods to return same *AssetMin instance")
+		}
+
+		// Verify all files were created
+		files := []string{"index.html", "style.css", "script.js"}
+		for _, file := range files {
+			path := filepath.Join(themeDir, file)
+			if _, err := os.Stat(path); os.IsNotExist(err) {
+				t.Errorf("Expected file %s to be created", file)
+			}
+		}
+	})
+}
+
+func TestCreateDefaultFaviconIfNotExist(t *testing.T) {
+	t.Run("creates favicon.svg when it doesn't exist", func(t *testing.T) {
+		tempDir := t.TempDir()
+		themeDir := filepath.Join(tempDir, "theme")
+		outputDir := filepath.Join(tempDir, "output")
+
+		if err := os.MkdirAll(themeDir, 0755); err != nil {
+			t.Fatalf("Failed to create theme directory: %v", err)
+		}
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			t.Fatalf("Failed to create output directory: %v", err)
+		}
+
+		var logMessages []string
+		logger := func(messages ...any) {
+			var strMessages []string
+			for _, msg := range messages {
+				strMessages = append(strMessages, anyToString(msg))
+			}
+			logMessages = append(logMessages, strings.Join(strMessages, " "))
+		}
+
+		ac := &AssetConfig{
+			ThemeFolder:    func() string { return themeDir },
+			WebFilesFolder: func() string { return outputDir },
+			Logger:         logger,
+		}
+		am := NewAssetMin(ac)
+
+		result := am.CreateDefaultFaviconIfNotExist()
+
+		if result != am {
+			t.Error("Expected method to return *AssetMin instance for chaining")
+		}
+
+		targetPath := filepath.Join(themeDir, "favicon.svg")
+		content, err := os.ReadFile(targetPath)
+		if err != nil {
+			t.Fatalf("Failed to read generated file: %v", err)
+		}
+
+		contentStr := string(content)
+		if !strings.Contains(contentStr, "<svg") {
+			t.Error("Expected favicon to contain '<svg' tag")
+		}
+		if !strings.Contains(contentStr, "xmlns") {
+			t.Error("Expected favicon to contain 'xmlns' attribute")
+		}
+
+		found := false
+		for _, msg := range logMessages {
+			if strings.Contains(msg, "Generated Favicon file at") {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Error("Expected log message about file generation")
+		}
+	})
+
+	t.Run("skips creation when favicon already exists", func(t *testing.T) {
+		tempDir := t.TempDir()
+		themeDir := filepath.Join(tempDir, "theme")
+		outputDir := filepath.Join(tempDir, "output")
+
+		if err := os.MkdirAll(themeDir, 0755); err != nil {
+			t.Fatalf("Failed to create theme directory: %v", err)
+		}
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			t.Fatalf("Failed to create output directory: %v", err)
+		}
+
+		existingContent := "<svg>existing</svg>"
+		existingPath := filepath.Join(themeDir, "favicon.svg")
+		if err := os.WriteFile(existingPath, []byte(existingContent), 0644); err != nil {
+			t.Fatalf("Failed to create existing file: %v", err)
+		}
+
+		var logMessages []string
+		logger := func(messages ...any) {
+			var strMessages []string
+			for _, msg := range messages {
+				strMessages = append(strMessages, anyToString(msg))
+			}
+			logMessages = append(logMessages, strings.Join(strMessages, " "))
+		}
+
+		ac := &AssetConfig{
+			ThemeFolder:    func() string { return themeDir },
+			WebFilesFolder: func() string { return outputDir },
+			Logger:         logger,
+		}
+		am := NewAssetMin(ac)
+
+		result := am.CreateDefaultFaviconIfNotExist()
+
+		if result != am {
+			t.Error("Expected method to return *AssetMin instance for chaining")
+		}
+
+		content, err := os.ReadFile(existingPath)
+		if err != nil {
+			t.Fatalf("Failed to read existing file: %v", err)
+		}
+
+		if string(content) != existingContent {
+			t.Error("Expected existing file content to remain unchanged")
+		}
+
+		found := false
+		for _, msg := range logMessages {
+			if strings.Contains(msg, "already exists") && strings.Contains(msg, "skipping generation") {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Error("Expected log message about skipping file generation")
+		}
+	})
+
+	t.Run("test method chaining with favicon", func(t *testing.T) {
+		tempDir := t.TempDir()
+		themeDir := filepath.Join(tempDir, "theme")
+		outputDir := filepath.Join(tempDir, "output")
+
+		if err := os.MkdirAll(themeDir, 0755); err != nil {
+			t.Fatalf("Failed to create theme directory: %v", err)
+		}
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			t.Fatalf("Failed to create output directory: %v", err)
+		}
+
+		ac := &AssetConfig{
+			ThemeFolder:    func() string { return themeDir },
+			WebFilesFolder: func() string { return outputDir },
+			Logger:         func(messages ...any) {},
+		}
+		am := NewAssetMin(ac)
+
+		// Test chaining all methods including favicon
+		result := am.CreateDefaultIndexHtmlIfNotExist().
+			CreateDefaultCssIfNotExist().
+			CreateDefaultJsIfNotExist().
+			CreateDefaultFaviconIfNotExist()
+
+		if result != am {
+			t.Error("Expected chained methods to return same *AssetMin instance")
+		}
+
+		// Verify all files were created
+		files := []string{"index.html", "style.css", "script.js", "favicon.svg"}
+		for _, file := range files {
+			path := filepath.Join(themeDir, file)
+			if _, err := os.Stat(path); os.IsNotExist(err) {
+				t.Errorf("Expected file %s to be created", file)
+			}
+		}
+	})
+}
