@@ -28,6 +28,12 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 		return c.mainJsHandler, err
 
 	case ".svg":
+		// Check if it's the favicon file
+		if filepath.Base(filePath) == c.svgFaviconFileName {
+			err := c.faviconSvgHandler.UpdateContent(filePath, event, file)
+			return c.faviconSvgHandler, err
+		}
+		// Otherwise treat as sprite icon
 		err := c.spriteSvgHandler.UpdateContent(filePath, event, file)
 		return c.spriteSvgHandler, err
 
@@ -161,6 +167,7 @@ func (c *AssetMin) UnobservedFiles() []string {
 		c.mainStyleCssHandler.outputPath,
 		c.mainJsHandler.outputPath,
 		c.spriteSvgHandler.outputPath,
+		c.faviconSvgHandler.outputPath,
 		c.indexHtmlHandler.outputPath,
 	}
 }
@@ -201,12 +208,14 @@ func (c *AssetMin) isOutputPath(filePath string) bool {
 	cssOutputPath := filepath.Clean(c.mainStyleCssHandler.outputPath)
 	jsOutputPath := filepath.Clean(c.mainJsHandler.outputPath)
 	svgOutputPath := filepath.Clean(c.spriteSvgHandler.outputPath)
+	faviconOutputPath := filepath.Clean(c.faviconSvgHandler.outputPath)
 	htmlHandlerOutputPath := filepath.Clean(c.indexHtmlHandler.outputPath)
 
 	// Case-sensitive comparison first
 	if normalizedFilePath == cssOutputPath ||
 		normalizedFilePath == jsOutputPath ||
 		normalizedFilePath == svgOutputPath ||
+		normalizedFilePath == faviconOutputPath ||
 		normalizedFilePath == htmlHandlerOutputPath {
 		return true
 	}
@@ -216,10 +225,12 @@ func (c *AssetMin) isOutputPath(filePath string) bool {
 	cssOutputPathLower := strings.ToLower(cssOutputPath)
 	jsOutputPathLower := strings.ToLower(jsOutputPath)
 	svgOutputPathLower := strings.ToLower(svgOutputPath)
+	faviconOutputPathLower := strings.ToLower(faviconOutputPath)
 	htmlHandlerOutputPathLower := strings.ToLower(htmlHandlerOutputPath)
 
 	return normalizedFilePathLower == cssOutputPathLower ||
 		normalizedFilePathLower == jsOutputPathLower ||
 		normalizedFilePathLower == svgOutputPathLower ||
+		normalizedFilePathLower == faviconOutputPathLower ||
 		normalizedFilePathLower == htmlHandlerOutputPathLower
 }

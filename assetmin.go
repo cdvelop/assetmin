@@ -19,16 +19,18 @@ type AssetMin struct {
 	mainStyleCssHandler *asset
 	mainJsHandler       *asset
 	spriteSvgHandler    *asset
+	faviconSvgHandler   *asset
 	indexHtmlHandler    *asset
 	// indexHtmlHandler *asset
 	min *minify.M
 
 	WriteOnDisk bool // Indica si se debe escribir en disco
 
-	jsMainFileName   string // eg: script.js
-	cssMainFileName  string // eg: style.css
-	svgMainFileName  string // eg: icons.svg
-	htmlMainFileName string // eg: index.html
+	jsMainFileName     string // eg: script.js
+	cssMainFileName    string // eg: style.css
+	svgMainFileName    string // eg: icons.svg
+	svgFaviconFileName string // eg: favicon.svg
+	htmlMainFileName   string // eg: index.html
 }
 
 type AssetConfig struct {
@@ -45,10 +47,11 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 		min:         minify.New(),
 		WriteOnDisk: true, // Default to true so library writes output by default; tests may disable it explicitly
 		// initialize file name fields with previous constant values
-		jsMainFileName:   "script.js",
-		cssMainFileName:  "style.css",
-		svgMainFileName:  "icons.svg",
-		htmlMainFileName: "index.html",
+		jsMainFileName:     "script.js",
+		cssMainFileName:    "style.css",
+		svgMainFileName:    "icons.svg",
+		svgFaviconFileName: "favicon.svg",
+		htmlMainFileName:   "index.html",
 	}
 
 	// Set default AppName if not provided
@@ -60,6 +63,7 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 	c.mainStyleCssHandler = newAssetFile(c.cssMainFileName, "text/css", ac, nil)
 	c.mainJsHandler = newAssetFile(c.jsMainFileName, "text/javascript", ac, ac.GetRuntimeInitializerJS)
 	c.spriteSvgHandler = NewSvgHandler(ac, c.svgMainFileName)
+	c.faviconSvgHandler = NewFaviconSvgHandler(ac, c.svgFaviconFileName)
 	c.indexHtmlHandler = NewHtmlHandler(ac, c.htmlMainFileName, c.cssMainFileName, c.jsMainFileName)
 	c.min.Add("text/html", &html.Minifier{
 		KeepDocumentTags: true, // para mantener las etiquetas html,head,body. tambien mantiene las etiquetas de cierre
@@ -87,6 +91,7 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 	if fileExists(c.mainStyleCssHandler.outputPath) != "" ||
 		fileExists(c.mainJsHandler.outputPath) != "" ||
 		fileExists(c.spriteSvgHandler.outputPath) != "" ||
+		fileExists(c.faviconSvgHandler.outputPath) != "" ||
 		fileExists(c.indexHtmlHandler.outputPath) != "" {
 		c.WriteOnDisk = true
 	}
@@ -125,6 +130,10 @@ func (c *AssetMin) NotifyIfOutputFilesExist() {
 
 	if c.spriteSvgHandler.notifyMeIfOutputFileExists != nil {
 		c.spriteSvgHandler.notifyMeIfOutputFileExists(fileExists(c.spriteSvgHandler.outputPath))
+	}
+
+	if c.faviconSvgHandler.notifyMeIfOutputFileExists != nil {
+		c.faviconSvgHandler.notifyMeIfOutputFileExists(fileExists(c.faviconSvgHandler.outputPath))
 	}
 
 	if c.indexHtmlHandler.notifyMeIfOutputFileExists != nil {

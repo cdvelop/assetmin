@@ -19,3 +19,9 @@ func NewSvgHandler(ac *AssetConfig, outputName string) *asset {
 
 	return svgh
 }
+
+// NewFaviconSvgHandler creates a handler for favicon.svg that simply minifies and copies the file
+// without sprite wrapping. This handler processes standalone SVG files like favicon.svg
+func NewFaviconSvgHandler(ac *AssetConfig, outputName string) *asset {
+	return newAssetFile(outputName, "image/svg+xml", ac, nil)
+}
