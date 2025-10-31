@@ -67,6 +67,7 @@ func TestCreateDefaultIndexHtmlIfNotExist(t *testing.T) {
 			"<head>",
 			"<body>",
 			"</html>",
+			`<link rel="icon" type="image/svg+xml" href="favicon.svg"`,
 			`<link rel="stylesheet" href="style.css"`,
 			`<script src="script.js"`,
 		}
