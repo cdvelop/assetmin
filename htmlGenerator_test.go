@@ -37,6 +37,7 @@ func TestCreateDefaultIndexHtmlIfNotExist(t *testing.T) {
 			ThemeFolder:    func() string { return themeDir },
 			WebFilesFolder: func() string { return outputDir },
 			Logger:         logger,
+			AppName:        "TestApp",
 		}
 		am := NewAssetMin(ac)
 
@@ -67,6 +68,8 @@ func TestCreateDefaultIndexHtmlIfNotExist(t *testing.T) {
 			"<head>",
 			"<body>",
 			"</html>",
+			`<title>TestApp</title>`,
+			`<h1>Welcome to TestApp</h1>`,
 			`<link rel="icon" type="image/svg+xml" href="favicon.svg"`,
 			`<link rel="stylesheet" href="style.css"`,
 			`<script src="script.js"`,
@@ -126,6 +129,7 @@ func TestCreateDefaultIndexHtmlIfNotExist(t *testing.T) {
 			ThemeFolder:    func() string { return themeDir },
 			WebFilesFolder: func() string { return outputDir },
 			Logger:         logger,
+			AppName:        "ExistingApp",
 		}
 		am := NewAssetMin(ac)
 
@@ -178,6 +182,7 @@ func TestCreateDefaultIndexHtmlIfNotExist(t *testing.T) {
 			ThemeFolder:    func() string { return themeDir },
 			WebFilesFolder: func() string { return outputDir },
 			Logger:         func(messages ...any) {}, // Silent logger
+			AppName:        "ErrorApp",
 		}
 		am := NewAssetMin(ac)
 
@@ -350,6 +355,7 @@ func TestCreateDefaultJsIfNotExist(t *testing.T) {
 			ThemeFolder:    func() string { return themeDir },
 			WebFilesFolder: func() string { return outputDir },
 			Logger:         logger,
+			AppName:        "TestJSApp",
 		}
 		am := NewAssetMin(ac)
 
@@ -366,6 +372,9 @@ func TestCreateDefaultJsIfNotExist(t *testing.T) {
 		}
 
 		contentStr := string(content)
+		if !strings.Contains(contentStr, "TestJSApp") {
+			t.Error("Expected JS to contain 'TestJSApp'")
+		}
 		if !strings.Contains(contentStr, "console.log") {
 			t.Error("Expected JS to contain 'console.log'")
 		}
@@ -416,6 +425,7 @@ func TestCreateDefaultJsIfNotExist(t *testing.T) {
 			ThemeFolder:    func() string { return themeDir },
 			WebFilesFolder: func() string { return outputDir },
 			Logger:         logger,
+			AppName:        "ExistingJSApp",
 		}
 		am := NewAssetMin(ac)
 
@@ -462,6 +472,7 @@ func TestCreateDefaultJsIfNotExist(t *testing.T) {
 			ThemeFolder:    func() string { return themeDir },
 			WebFilesFolder: func() string { return outputDir },
 			Logger:         func(messages ...any) {},
+			AppName:        "ChainApp",
 		}
 		am := NewAssetMin(ac)
 
@@ -623,6 +634,7 @@ func TestCreateDefaultFaviconIfNotExist(t *testing.T) {
 			ThemeFolder:    func() string { return themeDir },
 			WebFilesFolder: func() string { return outputDir },
 			Logger:         func(messages ...any) {},
+			AppName:        "FaviconChainApp",
 		}
 		am := NewAssetMin(ac)
 

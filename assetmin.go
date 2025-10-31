@@ -36,6 +36,7 @@ type AssetConfig struct {
 	WebFilesFolder          func() string          // eg: web/static, web/public, web/assets
 	Logger                  func(message ...any)   // Renamed from io.Writer to a function type
 	GetRuntimeInitializerJS func() (string, error) // javascript code to initialize the wasm or other handlers
+	AppName                 string                 // Application name for templates (default: "MyApp")
 }
 
 func NewAssetMin(ac *AssetConfig) *AssetMin {
@@ -49,6 +50,12 @@ func NewAssetMin(ac *AssetConfig) *AssetMin {
 		svgMainFileName:  "icons.svg",
 		htmlMainFileName: "index.html",
 	}
+
+	// Set default AppName if not provided
+	if c.AppName == "" {
+		c.AppName = "MyApp"
+	}
+
 	// handlers will be initialized after filename fields are set
 	c.mainStyleCssHandler = newAssetFile(c.cssMainFileName, "text/css", ac, nil)
 	c.mainJsHandler = newAssetFile(c.jsMainFileName, "text/javascript", ac, ac.GetRuntimeInitializerJS)
