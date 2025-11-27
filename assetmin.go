@@ -2,7 +2,6 @@ package assetmin
 
 import (
 	"os"
-	"path/filepath"
 	"regexp"
 
 	"sync"
@@ -161,34 +160,35 @@ func (c *AssetMin) EnsureOutputDirectoryExists() {
 	}
 }
 
-// UpdateAssetContent updates the content of an asset directly in memory and triggers a rebuild.
-// This is useful for tools like TinyWasm that generate content dynamically.
-// fileName: e.g. "wasm_exec.js"
-// content: the raw content of the file
-func (c *AssetMin) UpdateAssetContent(fileName string, content []byte) error {
+// RefreshAsset triggers a rebuild of the asset handler for the given extension.
+// This is useful when external dependencies (like TinyWasm's initializer JS) change.
+// extension: e.g. ".js", ".css"
+func (c *AssetMin) RefreshAsset(extension string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	extension := filepath.Ext(fileName)
-	// Use fileName as filePath since it's a virtual/direct update
-	// We treat this as a "write" event
-	fh, err := c.UpdateFileContentInMemory(fileName, extension, "write", content)
-	if err != nil {
-		return err
+	var fh *asset
+	switch extension {
+	case ".js":
+		fh = c.mainJsHandler
+	case ".css":
+		fh = c.mainStyleCssHandler
+	case ".svg":
+		// Could be sprite or favicon, but usually we refresh JS/CSS
+		// For now, let's assume we don't need to refresh SVG via this method
+		// or we could add a specific method for it.
+		// Given the requirement is for JS (wasm_exec), we focus on JS.
 	}
 
-	if fh == nil {
-		return nil // No handler found for this file type
+	if fh != nil {
+		// Force write to disk if not enabled, similar to UpdateAssetContent logic
+		if !c.WriteOnDisk {
+			c.WriteOnDisk = true
+		}
+		// Trigger processAndWrite
+		// We pass a dummy event name as it's a manual refresh
+		if err := c.processAndWrite(fh, "RefreshAsset "+extension); err != nil {
+			c.writeMessage("Error refreshing asset "+extension, err)
+		}
 	}
-
-	// Force write to disk since this is an explicit update
-	// We don't check c.WriteOnDisk here because if the user calls this, they likely want an update.
-	// However, if we want to respect the global flag, we should check it.
-	// Given the use case (TinyWasm update), we probably want to write.
-	// But let's respect the flag if it's strictly false (though it defaults to true).
-	if !c.WriteOnDisk {
-		c.WriteOnDisk = true // Enable it if it was disabled, similar to NewFileEvent logic for "write"
-	}
-
-	return c.processAndWrite(fh, "UpdateAssetContent "+fileName)
 }
