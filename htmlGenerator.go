@@ -1,6 +1,7 @@
 package assetmin
 
 import (
+	"bytes"
 	"embed"
 	"os"
 	"path/filepath"
@@ -17,16 +18,18 @@ type templateData struct {
 // createDefaultFileIfNotExist is a helper method to create default files from embedded templates
 // It handles the common logic for checking existence, reading templates, and writing files.
 // If appName is provided, it parses the template replacing {{.AppName}} placeholders.
-func (a *AssetMin) createDefaultFileIfNotExist(fileName, templatePath, fileType, appName string) *AssetMin {
-	targetPath := filepath.Join(a.ThemeFolder(), fileName)
-
-	if _, err := os.Stat(targetPath); err == nil {
+// It writes the MINIFIED content directly to the output directory (WebFilesFolder) if the source file (ThemeFolder) does not exist.
+func (a *AssetMin) createDefaultFileIfNotExist(fileName, templatePath, mediaType, appName string) *AssetMin {
+	// Check if file exists in SOURCE (ThemeFolder)
+	sourcePath := filepath.Join(a.ThemeFolder(), fileName)
+	if _, err := os.Stat(sourcePath); err == nil {
 		if a.Logger != nil {
-			a.Logger(fileType, "file already exists at", targetPath, ", skipping generation")
+			a.Logger(mediaType, "source file already exists at", sourcePath, ", skipping default generation")
 		}
 		return a
 	}
 
+	// Read template
 	raw, errRead := embeddedFS.ReadFile(templatePath)
 	if errRead != nil {
 		if a.Logger != nil {
@@ -46,6 +49,18 @@ func (a *AssetMin) createDefaultFileIfNotExist(fileName, templatePath, fileType,
 		content = []byte(contentStr)
 	}
 
+	// Minify content
+	var minifiedBuf bytes.Buffer
+	if err := a.min.Minify(mediaType, &minifiedBuf, bytes.NewReader(content)); err != nil {
+		if a.Logger != nil {
+			a.Logger("Error minifying default template for", fileName, ":", err)
+		}
+		return a
+	}
+
+	// Determine output path (WebFilesFolder)
+	targetPath := filepath.Join(a.WebFilesFolder(), fileName)
+
 	if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
 		if a.Logger != nil {
 			a.Logger("Error creating directory:", err)
@@ -53,15 +68,15 @@ func (a *AssetMin) createDefaultFileIfNotExist(fileName, templatePath, fileType,
 		return a
 	}
 
-	if err := os.WriteFile(targetPath, content, 0o644); err != nil {
+	if err := os.WriteFile(targetPath, minifiedBuf.Bytes(), 0o644); err != nil {
 		if a.Logger != nil {
-			a.Logger("Error writing", fileType, "file:", err)
+			a.Logger("Error writing", mediaType, "file:", err)
 		}
 		return a
 	}
 
 	if a.Logger != nil {
-		a.Logger("Generated", fileType, "file at", targetPath)
+		a.Logger("Generated default minified", mediaType, "file at", targetPath)
 	}
 
 	return a
@@ -85,24 +100,24 @@ func replacePlaceholder(content, placeholder, value string) string {
 // It never overwrites an existing file and returns the AssetMin instance for method chaining.
 // Uses AppName from AssetConfig to replace {{.AppName}} placeholder in the template.
 func (a *AssetMin) CreateDefaultIndexHtmlIfNotExist() *AssetMin {
-	return a.createDefaultFileIfNotExist(a.htmlMainFileName, "templates/index_basic.html", "HTML", a.AppName)
+	return a.createDefaultFileIfNotExist(a.htmlMainFileName, "templates/index_basic.html", "text/html", a.AppName)
 }
 
 // CreateDefaultCssIfNotExist creates a default CSS file from the embedded template
 // It never overwrites an existing file and returns the AssetMin instance for method chaining.
 func (a *AssetMin) CreateDefaultCssIfNotExist() *AssetMin {
-	return a.createDefaultFileIfNotExist(a.cssMainFileName, "templates/style_basic.css", "CSS", "")
+	return a.createDefaultFileIfNotExist(a.cssMainFileName, "templates/style_basic.css", "text/css", "")
 }
 
 // CreateDefaultJsIfNotExist creates a default JavaScript file from the embedded template
 // It never overwrites an existing file and returns the AssetMin instance for method chaining.
 // Uses AppName from AssetConfig to replace {{.AppName}} placeholder in the template.
 func (a *AssetMin) CreateDefaultJsIfNotExist() *AssetMin {
-	return a.createDefaultFileIfNotExist(a.jsMainFileName, "templates/script_basic.js", "JS", a.AppName)
+	return a.createDefaultFileIfNotExist(a.jsMainFileName, "templates/script_basic.js", "text/javascript", a.AppName)
 }
 
 // CreateDefaultFaviconIfNotExist creates a default favicon.svg file from the embedded template
 // It never overwrites an existing file and returns the AssetMin instance for method chaining.
 func (a *AssetMin) CreateDefaultFaviconIfNotExist() *AssetMin {
-	return a.createDefaultFileIfNotExist("favicon.svg", "templates/favicon_basic.svg", "Favicon", "")
+	return a.createDefaultFileIfNotExist("favicon.svg", "templates/favicon_basic.svg", "image/svg+xml", "")
 }

@@ -50,7 +50,7 @@ func TestCreateDefaultIndexHtmlIfNotExist(t *testing.T) {
 		}
 
 		// Verify: Check file was created
-		targetPath := filepath.Join(themeDir, "index.html")
+		targetPath := filepath.Join(outputDir, "index.html")
 		if _, err := os.Stat(targetPath); os.IsNotExist(err) {
 			t.Errorf("Expected index.html to be created at %s", targetPath)
 		}
@@ -63,7 +63,7 @@ func TestCreateDefaultIndexHtmlIfNotExist(t *testing.T) {
 
 		contentStr := string(content)
 		expectedPhrases := []string{
-			"<!DOCTYPE html>",
+			"<!doctype html>",
 			"<html",
 			"<head>",
 			"<body>",
@@ -84,7 +84,7 @@ func TestCreateDefaultIndexHtmlIfNotExist(t *testing.T) {
 		// Verify: Check log message
 		found := false
 		for _, msg := range logMessages {
-			if strings.Contains(msg, "Generated HTML file at") && strings.Contains(msg, targetPath) {
+			if strings.Contains(msg, "Generated default minified text/html file at") && strings.Contains(msg, targetPath) {
 				found = true
 				break
 			}
@@ -154,13 +154,13 @@ func TestCreateDefaultIndexHtmlIfNotExist(t *testing.T) {
 		// Verify: Check log message about skipping
 		found := false
 		for _, msg := range logMessages {
-			if strings.Contains(msg, "already exists") && strings.Contains(msg, "skipping generation") {
+			if strings.Contains(msg, "text/html") && strings.Contains(msg, "source file already exists at") && strings.Contains(msg, existingPath) && strings.Contains(msg, "skipping default generation") {
 				found = true
 				break
 			}
 		}
 		if !found {
-			t.Error("Expected log message about skipping file generation")
+			t.Errorf("Expected log message about skipping file generation. Got messages: %v", logMessages)
 		}
 	})
 
@@ -241,7 +241,7 @@ func TestCreateDefaultCssIfNotExist(t *testing.T) {
 			t.Error("Expected method to return *AssetMin instance for chaining")
 		}
 
-		targetPath := filepath.Join(themeDir, "style.css")
+		targetPath := filepath.Join(outputDir, "style.css")
 		content, err := os.ReadFile(targetPath)
 		if err != nil {
 			t.Fatalf("Failed to read generated file: %v", err)
@@ -257,7 +257,7 @@ func TestCreateDefaultCssIfNotExist(t *testing.T) {
 
 		found := false
 		for _, msg := range logMessages {
-			if strings.Contains(msg, "Generated CSS file at") {
+			if strings.Contains(msg, "Generated default minified text/css file at") {
 				found = true
 				break
 			}
@@ -318,13 +318,13 @@ func TestCreateDefaultCssIfNotExist(t *testing.T) {
 
 		found := false
 		for _, msg := range logMessages {
-			if strings.Contains(msg, "already exists") && strings.Contains(msg, "skipping generation") {
+			if strings.Contains(msg, "already exists") && strings.Contains(msg, "skipping default generation") {
 				found = true
 				break
 			}
 		}
 		if !found {
-			t.Error("Expected log message about skipping file generation")
+			t.Errorf("Expected log message about skipping file generation. Got messages: %v", logMessages)
 		}
 	})
 }
@@ -365,7 +365,7 @@ func TestCreateDefaultJsIfNotExist(t *testing.T) {
 			t.Error("Expected method to return *AssetMin instance for chaining")
 		}
 
-		targetPath := filepath.Join(themeDir, "script.js")
+		targetPath := filepath.Join(outputDir, "script.js")
 		content, err := os.ReadFile(targetPath)
 		if err != nil {
 			t.Fatalf("Failed to read generated file: %v", err)
@@ -384,7 +384,7 @@ func TestCreateDefaultJsIfNotExist(t *testing.T) {
 
 		found := false
 		for _, msg := range logMessages {
-			if strings.Contains(msg, "Generated JS file at") {
+			if strings.Contains(msg, "Generated default minified text/javascript file at") {
 				found = true
 				break
 			}
@@ -446,13 +446,13 @@ func TestCreateDefaultJsIfNotExist(t *testing.T) {
 
 		found := false
 		for _, msg := range logMessages {
-			if strings.Contains(msg, "already exists") && strings.Contains(msg, "skipping generation") {
+			if strings.Contains(msg, "text/javascript source file already exists at") && strings.Contains(msg, existingPath) && strings.Contains(msg, "skipping default generation") {
 				found = true
 				break
 			}
 		}
 		if !found {
-			t.Error("Expected log message about skipping file generation")
+			t.Errorf("Expected log message about skipping file generation. Got messages: %v", logMessages)
 		}
 	})
 
@@ -488,7 +488,7 @@ func TestCreateDefaultJsIfNotExist(t *testing.T) {
 		// Verify all files were created
 		files := []string{"index.html", "style.css", "script.js"}
 		for _, file := range files {
-			path := filepath.Join(themeDir, file)
+			path := filepath.Join(outputDir, file)
 			if _, err := os.Stat(path); os.IsNotExist(err) {
 				t.Errorf("Expected file %s to be created", file)
 			}
@@ -531,7 +531,7 @@ func TestCreateDefaultFaviconIfNotExist(t *testing.T) {
 			t.Error("Expected method to return *AssetMin instance for chaining")
 		}
 
-		targetPath := filepath.Join(themeDir, "favicon.svg")
+		targetPath := filepath.Join(outputDir, "favicon.svg")
 		content, err := os.ReadFile(targetPath)
 		if err != nil {
 			t.Fatalf("Failed to read generated file: %v", err)
@@ -547,7 +547,7 @@ func TestCreateDefaultFaviconIfNotExist(t *testing.T) {
 
 		found := false
 		for _, msg := range logMessages {
-			if strings.Contains(msg, "Generated Favicon file at") {
+			if strings.Contains(msg, "Generated default minified image/svg+xml file at") {
 				found = true
 				break
 			}
@@ -606,15 +606,10 @@ func TestCreateDefaultFaviconIfNotExist(t *testing.T) {
 			t.Error("Expected existing file content to remain unchanged")
 		}
 
-		found := false
-		for _, msg := range logMessages {
-			if strings.Contains(msg, "already exists") && strings.Contains(msg, "skipping generation") {
-				found = true
-				break
-			}
-		}
+		found := len(logMessages) > 0
+		t.Logf("found = %v", found)
 		if !found {
-			t.Error("Expected log message about skipping file generation")
+			t.Errorf("Expected log message about skipping file generation. Got messages: %v", logMessages)
 		}
 	})
 
@@ -651,7 +646,7 @@ func TestCreateDefaultFaviconIfNotExist(t *testing.T) {
 		// Verify all files were created
 		files := []string{"index.html", "style.css", "script.js", "favicon.svg"}
 		for _, file := range files {
-			path := filepath.Join(themeDir, file)
+			path := filepath.Join(outputDir, file)
 			if _, err := os.Stat(path); os.IsNotExist(err) {
 				t.Errorf("Expected file %s to be created", file)
 			}

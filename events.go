@@ -125,6 +125,11 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 		return nil
 	}
 
+	return c.processAndWrite(fh, e)
+}
+
+// processAndWrite handles the minification and writing of the asset to disk
+func (c *AssetMin) processAndWrite(fh *asset, context string) error {
 	// c.writeMessage("DEBUG proceeding to write to disk; WriteOnDisk=", c.WriteOnDisk)
 
 	// Process content into a buffer
@@ -132,30 +137,30 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 	fh.WriteContent(&buf)
 
 	// Debug: log content counts and preview
-	bufLen := buf.Len()
-	previewLen := bufLen
-	if previewLen > 100 {
-		previewLen = 100
-	}
+	// bufLen := buf.Len()
+	// previewLen := bufLen
+	// if previewLen > 100 {
+	// 	previewLen = 100
+	// }
 	// c.writeMessage("DEBUG contentOpen=", len(fh.contentOpen), "contentMiddle=", len(fh.contentMiddle), "contentClose=", len(fh.contentClose))
 	// c.writeMessage("DEBUG raw buffer size=", bufLen, "preview:", string(buf.Bytes()[:previewLen]))
 
 	// Minify the content
 	var minifiedBuf bytes.Buffer
 	if err := c.min.Minify(fh.mediatype, &minifiedBuf, &buf); err != nil {
-		return errors.New(e + " Minification error: " + err.Error())
+		return errors.New(context + " Minification error: " + err.Error())
 	}
 
 	// Write to disk
 	// c.writeMessage("DEBUG outputPath=", fh.outputPath, "minifiedSize=", minifiedBuf.Len())
-	minifiedLen := minifiedBuf.Len()
-	contentPreviewLen := minifiedLen
-	if contentPreviewLen > 200 {
-		contentPreviewLen = 200
-	}
+	// minifiedLen := minifiedBuf.Len()
+	// contentPreviewLen := minifiedLen
+	// if contentPreviewLen > 200 {
+	// 	contentPreviewLen = 200
+	// }
 	// c.writeMessage("DEBUG writing content:", string(minifiedBuf.Bytes()[:contentPreviewLen]))
 	if err := FileWrite(fh.outputPath, minifiedBuf); err != nil {
-		return errors.New(e + " File write error: " + err.Error())
+		return errors.New(context + " File write error: " + err.Error())
 	}
 
 	return nil

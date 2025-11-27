@@ -2,6 +2,7 @@ package assetmin
 
 import (
 	"os"
+	"path/filepath"
 	"regexp"
 
 	"sync"
@@ -158,4 +159,36 @@ func (c *AssetMin) EnsureOutputDirectoryExists() {
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		c.writeMessage("dont create output dir", err)
 	}
+}
+
+// UpdateAssetContent updates the content of an asset directly in memory and triggers a rebuild.
+// This is useful for tools like TinyWasm that generate content dynamically.
+// fileName: e.g. "wasm_exec.js"
+// content: the raw content of the file
+func (c *AssetMin) UpdateAssetContent(fileName string, content []byte) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	extension := filepath.Ext(fileName)
+	// Use fileName as filePath since it's a virtual/direct update
+	// We treat this as a "write" event
+	fh, err := c.UpdateFileContentInMemory(fileName, extension, "write", content)
+	if err != nil {
+		return err
+	}
+
+	if fh == nil {
+		return nil // No handler found for this file type
+	}
+
+	// Force write to disk since this is an explicit update
+	// We don't check c.WriteOnDisk here because if the user calls this, they likely want an update.
+	// However, if we want to respect the global flag, we should check it.
+	// Given the use case (TinyWasm update), we probably want to write.
+	// But let's respect the flag if it's strictly false (though it defaults to true).
+	if !c.WriteOnDisk {
+		c.WriteOnDisk = true // Enable it if it was disabled, similar to NewFileEvent logic for "write"
+	}
+
+	return c.processAndWrite(fh, "UpdateAssetContent "+fileName)
 }
