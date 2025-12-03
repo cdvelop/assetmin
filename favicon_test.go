@@ -89,7 +89,7 @@ func TestFaviconProcessing(t *testing.T) {
 		assert.NotContains(t, faviconStr, "icon-home", "Favicon should not contain sprite icons")
 
 		// Verify sprite output
-		outputSpritePath := filepath.Join(env.PublicDir, "icons.svg")
+		outputSpritePath := filepath.Join(env.PublicDir, "sprite.svg")
 		require.FileExists(t, outputSpritePath)
 
 		spriteOut, err := os.ReadFile(outputSpritePath)

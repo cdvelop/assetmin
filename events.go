@@ -29,7 +29,7 @@ func (c *AssetMin) UpdateFileContentInMemory(filePath, extension, event string, 
 
 	case ".svg":
 		// Check if it's the favicon file
-		if filepath.Base(filePath) == c.svgFaviconFileName {
+		if filepath.Base(filePath) == c.faviconSvgHandler.fileOutputName {
 			err := c.faviconSvgHandler.UpdateContent(filePath, event, file)
 			return c.faviconSvgHandler, err
 		}

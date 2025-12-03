@@ -17,7 +17,7 @@ type WorkMode int
 
 const (
 	MemoryMode WorkMode = iota // Serve from memory cache (default)
-	DiskMode                     // Write to disk + serve from cache
+	DiskMode                   // Write to disk + serve from cache
 )
 
 type AssetMin struct {
@@ -30,11 +30,6 @@ type AssetMin struct {
 	indexHtmlHandler    *asset
 	min                 *minify.M
 	workMode            WorkMode // Current work mode
-	jsMainFileName      string   // eg: script.js
-	cssMainFileName     string   // eg: style.css
-	svgMainFileName     string   // eg: icons.svg
-	svgFaviconFileName  string // eg: favicon.svg
-	htmlMainFileName    string // eg: index.html
 }
 
 type Config struct {
@@ -47,31 +42,32 @@ type Config struct {
 
 func NewAssetMin(ac *Config) *AssetMin {
 	c := &AssetMin{
-		Config:             ac,
-		min:                minify.New(),
-		jsMainFileName:     "script.js",
-		cssMainFileName:    "style.css",
-		svgMainFileName:    "icons.svg",
-		svgFaviconFileName: "favicon.svg",
-		htmlMainFileName:   "index.html",
+		Config: ac,
+		min:    minify.New(),
 	}
 
 	if c.AppName == "" {
 		c.AppName = "MyApp"
 	}
 
-	c.mainStyleCssHandler = newAssetFile(c.cssMainFileName, "text/css", ac, nil)
-	c.mainJsHandler = newAssetFile(c.jsMainFileName, "text/javascript", ac, ac.GetRuntimeInitializerJS)
-	c.spriteSvgHandler = NewSvgHandler(ac, c.svgMainFileName)
-	c.faviconSvgHandler = NewFaviconSvgHandler(ac, c.svgFaviconFileName)
+	jsMainFileName := "script.js"
+	cssMainFileName := "style.css"
+	svgMainFileName := "sprite.svg"
+	svgFaviconFileName := "favicon.svg"
+	htmlMainFileName := "index.html"
+
+	c.mainStyleCssHandler = newAssetFile(cssMainFileName, "text/css", ac, nil)
+	c.mainJsHandler = newAssetFile(jsMainFileName, "text/javascript", ac, ac.GetRuntimeInitializerJS)
+	c.spriteSvgHandler = NewSvgHandler(ac, svgMainFileName)
+	c.faviconSvgHandler = NewFaviconSvgHandler(ac, svgFaviconFileName)
 
 	// Set URL paths before creating the index handler that depends on them
-	c.mainStyleCssHandler.urlPath = path.Join("/", ac.AssetsURLPrefix, c.cssMainFileName)
-	c.mainJsHandler.urlPath = path.Join("/", ac.AssetsURLPrefix, c.jsMainFileName)
-	c.spriteSvgHandler.urlPath = path.Join("/", ac.AssetsURLPrefix, c.svgMainFileName)
-	c.faviconSvgHandler.urlPath = path.Join("/", ac.AssetsURLPrefix, c.svgFaviconFileName)
+	c.mainStyleCssHandler.urlPath = path.Join("/", ac.AssetsURLPrefix, cssMainFileName)
+	c.mainJsHandler.urlPath = path.Join("/", ac.AssetsURLPrefix, jsMainFileName)
+	c.spriteSvgHandler.urlPath = path.Join("/", ac.AssetsURLPrefix, svgMainFileName)
+	c.faviconSvgHandler.urlPath = path.Join("/", ac.AssetsURLPrefix, svgFaviconFileName)
 
-	c.indexHtmlHandler = NewHtmlHandler(ac, c.htmlMainFileName, c.mainStyleCssHandler.URLPath(), c.mainJsHandler.URLPath())
+	c.indexHtmlHandler = NewHtmlHandler(ac, htmlMainFileName, c.mainStyleCssHandler.URLPath(), c.mainJsHandler.URLPath())
 	c.indexHtmlHandler.urlPath = "/" // Index is always at root
 	c.min.Add("text/html", &html.Minifier{
 		KeepDocumentTags: true,
