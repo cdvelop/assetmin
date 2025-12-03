@@ -33,11 +33,11 @@ func TestCreateDefaultIndexHtmlIfNotExist(t *testing.T) {
 		}
 
 		// Create AssetMin instance
-		ac := &AssetConfig{
-			ThemeFolder:    func() string { return themeDir },
-			WebFilesFolder: func() string { return outputDir },
-			Logger:         logger,
-			AppName:        "TestApp",
+		ac := &Config{
+			ThemeFolder: func() string { return themeDir },
+			OutputDir:   func() string { return outputDir },
+			Logger:      logger,
+			AppName:     "TestApp",
 		}
 		am := NewAssetMin(ac)
 
@@ -125,11 +125,11 @@ func TestCreateDefaultIndexHtmlIfNotExist(t *testing.T) {
 		}
 
 		// Create AssetMin instance
-		ac := &AssetConfig{
-			ThemeFolder:    func() string { return themeDir },
-			WebFilesFolder: func() string { return outputDir },
-			Logger:         logger,
-			AppName:        "ExistingApp",
+		ac := &Config{
+			ThemeFolder: func() string { return themeDir },
+			OutputDir:   func() string { return outputDir },
+			Logger:      logger,
+			AppName:     "ExistingApp",
 		}
 		am := NewAssetMin(ac)
 
@@ -178,11 +178,11 @@ func TestCreateDefaultIndexHtmlIfNotExist(t *testing.T) {
 			t.Fatalf("Failed to create output directory: %v", err)
 		}
 
-		ac := &AssetConfig{
-			ThemeFolder:    func() string { return themeDir },
-			WebFilesFolder: func() string { return outputDir },
-			Logger:         func(messages ...any) {}, // Silent logger
-			AppName:        "ErrorApp",
+		ac := &Config{
+			ThemeFolder: func() string { return themeDir },
+			OutputDir:   func() string { return outputDir },
+			Logger:      func(messages ...any) {}, // Silent logger
+			AppName:     "ErrorApp",
 		}
 		am := NewAssetMin(ac)
 
@@ -228,10 +228,10 @@ func TestCreateDefaultCssIfNotExist(t *testing.T) {
 			logMessages = append(logMessages, strings.Join(strMessages, " "))
 		}
 
-		ac := &AssetConfig{
-			ThemeFolder:    func() string { return themeDir },
-			WebFilesFolder: func() string { return outputDir },
-			Logger:         logger,
+		ac := &Config{
+			ThemeFolder: func() string { return themeDir },
+			OutputDir:   func() string { return outputDir },
+			Logger:      logger,
 		}
 		am := NewAssetMin(ac)
 
@@ -294,10 +294,10 @@ func TestCreateDefaultCssIfNotExist(t *testing.T) {
 			logMessages = append(logMessages, strings.Join(strMessages, " "))
 		}
 
-		ac := &AssetConfig{
-			ThemeFolder:    func() string { return themeDir },
-			WebFilesFolder: func() string { return outputDir },
-			Logger:         logger,
+		ac := &Config{
+			ThemeFolder: func() string { return themeDir },
+			OutputDir:   func() string { return outputDir },
+			Logger:      logger,
 		}
 		am := NewAssetMin(ac)
 
@@ -351,11 +351,11 @@ func TestCreateDefaultJsIfNotExist(t *testing.T) {
 			logMessages = append(logMessages, strings.Join(strMessages, " "))
 		}
 
-		ac := &AssetConfig{
-			ThemeFolder:    func() string { return themeDir },
-			WebFilesFolder: func() string { return outputDir },
-			Logger:         logger,
-			AppName:        "TestJSApp",
+		ac := &Config{
+			ThemeFolder: func() string { return themeDir },
+			OutputDir:   func() string { return outputDir },
+			Logger:      logger,
+			AppName:     "TestJSApp",
 		}
 		am := NewAssetMin(ac)
 
@@ -421,11 +421,11 @@ func TestCreateDefaultJsIfNotExist(t *testing.T) {
 			logMessages = append(logMessages, strings.Join(strMessages, " "))
 		}
 
-		ac := &AssetConfig{
-			ThemeFolder:    func() string { return themeDir },
-			WebFilesFolder: func() string { return outputDir },
-			Logger:         logger,
-			AppName:        "ExistingJSApp",
+		ac := &Config{
+			ThemeFolder: func() string { return themeDir },
+			OutputDir:   func() string { return outputDir },
+			Logger:      logger,
+			AppName:     "ExistingJSApp",
 		}
 		am := NewAssetMin(ac)
 
@@ -468,11 +468,11 @@ func TestCreateDefaultJsIfNotExist(t *testing.T) {
 			t.Fatalf("Failed to create output directory: %v", err)
 		}
 
-		ac := &AssetConfig{
-			ThemeFolder:    func() string { return themeDir },
-			WebFilesFolder: func() string { return outputDir },
-			Logger:         func(messages ...any) {},
-			AppName:        "ChainApp",
+		ac := &Config{
+			ThemeFolder: func() string { return themeDir },
+			OutputDir:   func() string { return outputDir },
+			Logger:      func(messages ...any) {},
+			AppName:     "ChainApp",
 		}
 		am := NewAssetMin(ac)
 
@@ -518,10 +518,10 @@ func TestCreateDefaultFaviconIfNotExist(t *testing.T) {
 			logMessages = append(logMessages, strings.Join(strMessages, " "))
 		}
 
-		ac := &AssetConfig{
-			ThemeFolder:    func() string { return themeDir },
-			WebFilesFolder: func() string { return outputDir },
-			Logger:         logger,
+		ac := &Config{
+			ThemeFolder: func() string { return themeDir },
+			OutputDir:   func() string { return outputDir },
+			Logger:      logger,
 		}
 		am := NewAssetMin(ac)
 
@@ -584,10 +584,10 @@ func TestCreateDefaultFaviconIfNotExist(t *testing.T) {
 			logMessages = append(logMessages, strings.Join(strMessages, " "))
 		}
 
-		ac := &AssetConfig{
-			ThemeFolder:    func() string { return themeDir },
-			WebFilesFolder: func() string { return outputDir },
-			Logger:         logger,
+		ac := &Config{
+			ThemeFolder: func() string { return themeDir },
+			OutputDir:   func() string { return outputDir },
+			Logger:      logger,
 		}
 		am := NewAssetMin(ac)
 
@@ -625,11 +625,11 @@ func TestCreateDefaultFaviconIfNotExist(t *testing.T) {
 			t.Fatalf("Failed to create output directory: %v", err)
 		}
 
-		ac := &AssetConfig{
-			ThemeFolder:    func() string { return themeDir },
-			WebFilesFolder: func() string { return outputDir },
-			Logger:         func(messages ...any) {},
-			AppName:        "FaviconChainApp",
+		ac := &Config{
+			ThemeFolder: func() string { return themeDir },
+			OutputDir:   func() string { return outputDir },
+			Logger:      func(messages ...any) {},
+			AppName:     "FaviconChainApp",
 		}
 		am := NewAssetMin(ac)
 

@@ -18,7 +18,7 @@ type templateData struct {
 // createDefaultFileIfNotExist is a helper method to create default files from embedded templates
 // It handles the common logic for checking existence, reading templates, and writing files.
 // If appName is provided, it parses the template replacing {{.AppName}} placeholders.
-// It writes the MINIFIED content directly to the output directory (WebFilesFolder) if the source file (ThemeFolder) does not exist.
+// It writes the MINIFIED content directly to the output directory (OutputDir) if the source file (ThemeFolder) does not exist.
 func (a *AssetMin) createDefaultFileIfNotExist(fileName, templatePath, mediaType, appName string) *AssetMin {
 	// Check if file exists in SOURCE (ThemeFolder)
 	sourcePath := filepath.Join(a.ThemeFolder(), fileName)
@@ -58,8 +58,8 @@ func (a *AssetMin) createDefaultFileIfNotExist(fileName, templatePath, mediaType
 		return a
 	}
 
-	// Determine output path (WebFilesFolder)
-	targetPath := filepath.Join(a.WebFilesFolder(), fileName)
+	// Determine output path (OutputDir)
+	targetPath := filepath.Join(a.OutputDir(), fileName)
 
 	if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
 		if a.Logger != nil {
@@ -98,7 +98,7 @@ func replacePlaceholder(content, placeholder, value string) string {
 
 // CreateDefaultIndexHtmlIfNotExist creates a default index.html file from the embedded template
 // It never overwrites an existing file and returns the AssetMin instance for method chaining.
-// Uses AppName from AssetConfig to replace {{.AppName}} placeholder in the template.
+// Uses AppName from Config to replace {{.AppName}} placeholder in the template.
 func (a *AssetMin) CreateDefaultIndexHtmlIfNotExist() *AssetMin {
 	return a.createDefaultFileIfNotExist(a.htmlMainFileName, "templates/index_basic.html", "text/html", a.AppName)
 }
@@ -111,7 +111,7 @@ func (a *AssetMin) CreateDefaultCssIfNotExist() *AssetMin {
 
 // CreateDefaultJsIfNotExist creates a default JavaScript file from the embedded template
 // It never overwrites an existing file and returns the AssetMin instance for method chaining.
-// Uses AppName from AssetConfig to replace {{.AppName}} placeholder in the template.
+// Uses AppName from Config to replace {{.AppName}} placeholder in the template.
 func (a *AssetMin) CreateDefaultJsIfNotExist() *AssetMin {
 	return a.createDefaultFileIfNotExist(a.jsMainFileName, "templates/script_basic.js", "text/javascript", a.AppName)
 }

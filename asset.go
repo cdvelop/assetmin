@@ -43,10 +43,10 @@ func (f *contentFile) WriteToDisk() error {
 }
 
 // newAssetFile creates a new asset with the specified parameters
-func newAssetFile(outputName, mediaType string, ac *AssetConfig, initCode func() (string, error)) *asset {
+func newAssetFile(outputName, mediaType string, ac *Config, initCode func() (string, error)) *asset {
 	handler := &asset{
 		fileOutputName:             outputName,
-		outputPath:                 filepath.Join(ac.WebFilesFolder(), outputName),
+		outputPath:                 filepath.Join(ac.OutputDir(), outputName),
 		mediatype:                  mediaType,
 		initCode:                   initCode,
 		themeFolder:                ac.ThemeFolder(),

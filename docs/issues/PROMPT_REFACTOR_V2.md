@@ -1,4 +1,8 @@
-# Refactoring Plan V2 for AssetMin and GoLite
+# SUPERSEDED - See Active Feature Documents
+
+> **Note**: This document has been superseded. See [README.md](README.md) for active features.
+
+## Original Content (Archived)
 
 ## 1. AssetMin Refactor
 **Goal**: Replace direct content update with a notification-based rebuild mechanism.
@@ -15,7 +19,7 @@
 **Goal**: Correctly wire `tinywasm` embedding and browser reload.
 
 - [ ] **Configure `GetRuntimeInitializerJS`**:
-    - In `AddSectionBUILD`, set `AssetConfig.GetRuntimeInitializerJS` to call `h.wasmHandler.JavascriptForInitializing()`.
+    - In `AddSectionBUILD`, set `Config.GetRuntimeInitializerJS` to call `h.wasmHandler.JavascriptForInitializing()`.
     - This ensures `assetmin` pulls the latest `wasm_exec.js` content when building `script.js`.
 - [ ] **Update `OnWasmExecChange`**:
     - In the callback:

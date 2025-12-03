@@ -37,14 +37,14 @@ import (
 
 func main() {
 	// Create configuration
-	config := &assetmin.AssetConfig{
+	config := &assetmin.Config{
 		// Define theme folder path
 		ThemeFolder: func() string { 
 			return "./web/theme" 
 		},
 		
 		// Define public folder for output files
-		WebFilesFolder: func() string { 
+		OutputDir: func() string { 
 			return "./web/public" 
 		},
 		
@@ -97,9 +97,17 @@ Processes a file event (create/write).
 | Option | Description |
 |--------|-------------|
 | `ThemeFolder` | Function that returns the path to your theme directory |
-| `WebFilesFolder` | Function that returns the path to your public output directory |
+| `OutputDir` | Function that returns the path to your public output directory |
 | `Print` | Function for logging messages |
 | `GetRuntimeInitializerJS` | Function that returns initialization JavaScript code |
+
+## 📋 Roadmap
+
+See [docs/issues/README.md](docs/issues/README.md) for planned features:
+- HTTP Routes & Work Modes (SSR/Disk)
+- Asset Caching System
+- Template System Refactor
+- TUI Integration
 
 ---
 ## [Contributing](docs/CONTRIBUTING.md)

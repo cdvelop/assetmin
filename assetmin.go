@@ -15,7 +15,7 @@ import (
 
 type AssetMin struct {
 	mu sync.Mutex // Added mutex for synchronization
-	*AssetConfig
+	*Config
 	mainStyleCssHandler *asset
 	mainJsHandler       *asset
 	spriteSvgHandler    *asset
@@ -33,17 +33,17 @@ type AssetMin struct {
 	htmlMainFileName   string // eg: index.html
 }
 
-type AssetConfig struct {
+type Config struct {
 	ThemeFolder             func() string          // eg: web/theme
-	WebFilesFolder          func() string          // eg: web/static, web/public, web/assets
+	OutputDir               func() string          // eg: web/static, web/public, web/assets
 	Logger                  func(message ...any)   // Renamed from io.Writer to a function type
 	GetRuntimeInitializerJS func() (string, error) // javascript code to initialize the wasm or other handlers
 	AppName                 string                 // Application name for templates (default: "MyApp")
 }
 
-func NewAssetMin(ac *AssetConfig) *AssetMin {
+func NewAssetMin(ac *Config) *AssetMin {
 	c := &AssetMin{
-		AssetConfig: ac,
+		Config:      ac,
 		min:         minify.New(),
 		WriteOnDisk: true, // Default to true so library writes output by default; tests may disable it explicitly
 		// initialize file name fields with previous constant values
@@ -154,7 +154,7 @@ func fileExists(path string) string {
 // crea el directorio de salida si no existe
 func (c *AssetMin) EnsureOutputDirectoryExists() {
 	// Ensure main output directory exists
-	outputDir := c.WebFilesFolder()
+	outputDir := c.OutputDir()
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		c.writeMessage("dont create output dir", err)
 	}

@@ -1,4 +1,8 @@
-# Refactoring Plan for AssetMin and GoLite
+# SUPERSEDED - See Active Feature Documents
+
+> **Note**: This document has been superseded. See [README.md](README.md) for active features.
+
+## Original Content (Archived)
 
 ## 1. AssetMin Refactor
 **Goal**: Optimize template generation and integrate with TinyWasm updates.

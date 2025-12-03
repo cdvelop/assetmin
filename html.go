@@ -42,7 +42,7 @@ func (h *htmlHandler) generateJavaScriptTag() []byte {
 }
 
 // NewHtmlHandler creates an HTML asset handler using the provided output filename
-func NewHtmlHandler(ac *AssetConfig, outputName, cssName, jsName string) *asset {
+func NewHtmlHandler(ac *Config, outputName, cssName, jsName string) *asset {
 	af := newAssetFile(outputName, "text/html", ac, nil)
 
 	hh := &htmlHandler{

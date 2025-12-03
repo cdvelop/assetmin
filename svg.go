@@ -1,6 +1,6 @@
 package assetmin
 
-func NewSvgHandler(ac *AssetConfig, outputName string) *asset {
+func NewSvgHandler(ac *Config, outputName string) *asset {
 	svgh := newAssetFile(outputName, "image/svg+xml", ac, nil)
 
 	// Add the open tags to contentOpen
@@ -22,6 +22,6 @@ func NewSvgHandler(ac *AssetConfig, outputName string) *asset {
 
 // NewFaviconSvgHandler creates a handler for favicon.svg that simply minifies and copies the file
 // without sprite wrapping. This handler processes standalone SVG files like favicon.svg
-func NewFaviconSvgHandler(ac *AssetConfig, outputName string) *asset {
+func NewFaviconSvgHandler(ac *Config, outputName string) *asset {
 	return newAssetFile(outputName, "image/svg+xml", ac, nil)
 }
