@@ -6,14 +6,10 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"sync"
-
-	"github.com/tdewolff/minify/v2"
 )
 
 // represents a file handler for processing and minifying assets
 type asset struct {
-	mu             sync.RWMutex
 	fileOutputName string                 // eg: main.js,style.css,index.html,sprite.svg
 	outputPath     string                 // full path to output file eg: web/public/main.js
 	mediatype      string                 // eg: "text/html", "text/css", "image/svg+xml"
@@ -22,9 +18,6 @@ type asset struct {
 	contentOpen   []*contentFile // eg: files from theme folder
 	contentMiddle []*contentFile //eg: files from modules folder
 	contentClose  []*contentFile // eg: files js from testin or end tags
-
-	cachedMinified []byte // Minified content ready to serve
-	cacheValid     bool   // True if cache matches current content
 }
 
 // contentFile represents a file with its path and content
@@ -63,10 +56,6 @@ func newAssetFile(outputName, mediaType string, ac *Config, initCode func() (str
 
 // assetHandlerFiles ej &mainJsHandler, &mainStyleCssHandler
 func (h *asset) UpdateContent(filePath, event string, f *contentFile) (err error) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	h.cacheValid = false
 	// por defecto los archivos de destino son contenido comun eg: modulos, archivos sueltos
 	filesToUpdate := &h.contentMiddle
 
@@ -127,7 +116,8 @@ func findFileIndex(files []*contentFile, filePath string) int {
 	return -1
 }
 
-func (h *asset) writeContent(buf *bytes.Buffer) {
+// WriteContent processes the asset content and writes it to the provided buffer
+func (h *asset) WriteContent(buf *bytes.Buffer) {
 	if h.initCode != nil {
 		initCode, err := h.initCode()
 		if err == nil {
@@ -152,46 +142,4 @@ func (h *asset) writeContent(buf *bytes.Buffer) {
 		buf.Write(f.content)
 		buf.WriteString("\n") // Add newline between files
 	}
-}
-
-// WriteContent processes the asset content and writes it to the provided buffer
-func (h *asset) WriteContent(buf *bytes.Buffer) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	h.writeContent(buf)
-}
-
-func (h *asset) RegenerateCache(minifier *minify.M) error {
-	var buf bytes.Buffer
-	h.writeContent(&buf)
-
-	minified, err := minifier.Bytes(h.mediatype, buf.Bytes())
-	if err != nil {
-		return err
-	}
-
-	h.cachedMinified = minified
-	h.cacheValid = true
-	return nil
-}
-
-func (h *asset) GetMinifiedContent(minifier *minify.M) ([]byte, error) {
-	h.mu.RLock()
-	if h.cacheValid {
-		defer h.mu.RUnlock()
-		return h.cachedMinified, nil
-	}
-	h.mu.RUnlock()
-
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	// Double-checked locking
-	if h.cacheValid {
-		return h.cachedMinified, nil
-	}
-
-	if err := h.RegenerateCache(minifier); err != nil {
-		return nil, err
-	}
-	return h.cachedMinified, nil
 }

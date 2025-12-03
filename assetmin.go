@@ -1,7 +1,6 @@
 package assetmin
 
 import (
-	"bytes"
 	"os"
 	"regexp"
 	"sync"
@@ -116,19 +115,8 @@ func (c *AssetMin) RefreshAsset(extension string) {
 		if !c.WriteOnDisk {
 			c.WriteOnDisk = true
 		}
-		if err := c.processAsset(fh, "RefreshAsset "+extension); err != nil {
+		if err := c.processAndWrite(fh, "RefreshAsset "+extension); err != nil {
 			c.writeMessage("Error refreshing asset "+extension, err)
 		}
 	}
-}
-
-func (c *AssetMin) processAsset(fh *asset, context string) error {
-	if err := fh.RegenerateCache(c.min); err != nil {
-		return err
-	}
-
-	if c.WriteOnDisk {
-		return FileWrite(fh.outputPath, *bytes.NewBuffer(fh.cachedMinified))
-	}
-	return nil
 }
