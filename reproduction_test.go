@@ -15,6 +15,7 @@ import (
 // This test reproduces the bug where only the last modified file remains in output
 func TestInitialRegistrationScenario(t *testing.T) {
 	env := setupTestEnv("initial_registration_scenario", t)
+	env.AssetsHandler.WriteOnDisk = true
 	defer env.CleanDirectory()
 
 	// Step 1: Simulate initial registration phase
@@ -76,6 +77,7 @@ func TestInitialRegistrationScenario(t *testing.T) {
 // TestScenarioAfterWriteEvent tests what happens when another write event occurs
 func TestScenarioAfterWriteEvent(t *testing.T) {
 	env := setupTestEnv("after_write_scenario", t)
+	env.AssetsHandler.WriteOnDisk = true
 	defer env.CleanDirectory()
 
 	// Create initial files

@@ -17,6 +17,7 @@ func TestStripUseStrictAndSingleOccurrence(t *testing.T) {
 	}
 
 	env := setupTestEnv("js-use-strict", t, initJS)
+	env.AssetsHandler.WriteOnDisk = true
 	defer env.CleanDirectory()
 
 	env.CreateModulesDir()
@@ -79,6 +80,7 @@ func TestStripUseStrictWithWasmExecContent(t *testing.T) {
 	}
 
 	env := setupTestEnv("js-use-strict-wasm", t, initJS)
+	env.AssetsHandler.WriteOnDisk = true
 	defer env.CleanDirectory()
 
 	env.CreateModulesDir()

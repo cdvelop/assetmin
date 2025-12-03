@@ -52,8 +52,7 @@ func setupTestEnv(testCase string, t *testing.T, objects ...any) *TestEnvironmen
 
 	// Create asset configuration with logging using t.Log
 	config := &Config{
-		ThemeFolder: func() string { return themeDir },
-		OutputDir:   func() string { return publicDir },
+		OutputDir: publicDir,
 		Logger: func(message ...any) {
 			t.Log(message...)
 		},
