@@ -1,6 +1,7 @@
 package assetmin
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"path/filepath"
@@ -62,9 +63,6 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 
 	c.writeMessage(extension, event, "...", filePath)
 
-	// Debug trace: log current WriteOnDisk state with timestamp
-	// c.writeMessage("DEBUG [", time.Now().Format("15:04:05.000"), "] WriteOnDisk=", c.WriteOnDisk, "for event:", event)
-
 	// Increase sleep duration significantly to allow file system operations (like write after rename) to settle
 	// fail when time is < 10ms
 	time.Sleep(20 * time.Millisecond) // Increased from 10ms
@@ -74,7 +72,6 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 
 	// For delete/remove events, we don't need to read file content since file no longer exists
 	if event == "remove" || event == "delete" {
-		// c.writeMessage("DEBUG processing delete event, skipping file read")
 		content = []byte{} // Empty content for delete events
 	} else {
 		// read file content from filePath for other events
@@ -88,43 +85,24 @@ func (c *AssetMin) NewFileEvent(fileName, extension, filePath, event string) err
 	if err != nil {
 		return errors.New(e + err.Error())
 	}
-
-	// Log handler and memory state
-	if fh != nil {
-		// report counts of content arrays if available
-		var memInfo string
-		memInfo = "hasContentInMemory="
-		if fh.hasContentInMemory() {
-			memInfo += "true"
-		} else {
-			memInfo += "false"
-		}
-		// Debug: show detailed memory state
-		// c.writeMessage("DEBUG handlerOutput=", fh.outputPath, memInfo)
-		// c.writeMessage("DEBUG memory state - open:", len(fh.contentOpen), "middle:", len(fh.contentMiddle), "close:", len(fh.contentClose))
-
-		// Log file paths in memory (omitted to reduce debug noise)
-	}
-
-	// Check event type and file existence to determine if we should write to disk
-	if !c.WriteOnDisk {
-		// Only enable writing for write/delete events, never for create events
-		// This ensures that:
-		// 1. During InitialRegistration: create events only store in memory
-		// 2. After InitialRegistration: write events enable compilation with all memory content
-		// 3. Post-deletion scenarios: the first write (not create) will trigger compilation
-		if event == "write" || event == "remove" || event == "delete" {
-			c.WriteOnDisk = true
-		}
-		// Create events are always memory-only when WriteOnDisk=false
-		// This prevents premature writing during InitialRegistration
-	}
-
-	if !c.WriteOnDisk {
+	if fh == nil {
 		return nil
 	}
 
-	return c.processAsset(fh, e)
+	return c.processAsset(fh)
+}
+
+func (c *AssetMin) processAsset(fh *asset) error {
+	// 1. Always regenerate cache
+	if err := fh.RegenerateCache(c.min); err != nil {
+		return err
+	}
+
+	// 2. Write to disk only if DiskMode
+	if c.workMode == DiskMode {
+		return FileWrite(fh.outputPath, *bytes.NewBuffer(fh.cachedMinified))
+	}
+	return nil
 }
 
 func (c *AssetMin) UnobservedFiles() []string {

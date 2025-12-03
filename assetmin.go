@@ -12,6 +12,13 @@ import (
 	"github.com/tdewolff/minify/v2/svg"
 )
 
+type WorkMode int
+
+const (
+	MemoryMode WorkMode = iota // Serve from memory cache (default)
+	DiskMode                     // Write to disk + serve from cache
+)
+
 type AssetMin struct {
 	mu sync.Mutex // Added mutex for synchronization
 	*Config
@@ -21,10 +28,10 @@ type AssetMin struct {
 	faviconSvgHandler   *asset
 	indexHtmlHandler    *asset
 	min                 *minify.M
-	WriteOnDisk         bool   // Indica si se debe escribir en disco
-	jsMainFileName      string // eg: script.js
-	cssMainFileName     string // eg: style.css
-	svgMainFileName     string // eg: icons.svg
+	workMode            WorkMode // Current work mode
+	jsMainFileName      string   // eg: script.js
+	cssMainFileName     string   // eg: style.css
+	svgMainFileName     string   // eg: icons.svg
 	svgFaviconFileName  string // eg: favicon.svg
 	htmlMainFileName    string // eg: index.html
 }
@@ -112,11 +119,22 @@ func (c *AssetMin) RefreshAsset(extension string) {
 	}
 
 	if fh != nil {
-		if !c.WriteOnDisk {
-			c.WriteOnDisk = true
-		}
-		if err := c.processAndWrite(fh, "RefreshAsset "+extension); err != nil {
+		if err := c.processAsset(fh); err != nil {
 			c.writeMessage("Error refreshing asset "+extension, err)
 		}
 	}
+}
+
+// SetWorkMode sets the work mode for AssetMin.
+func (c *AssetMin) SetWorkMode(mode WorkMode) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.workMode = mode
+}
+
+// GetWorkMode returns the current work mode of AssetMin.
+func (c *AssetMin) GetWorkMode() WorkMode {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.workMode
 }

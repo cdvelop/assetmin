@@ -49,7 +49,7 @@ WebAssembly.instantiateStreaming(fetch("main.wasm"), minimalRuntime.importObject
 
 	// Setup test environment with mock TinyWasm handler
 	env := setupTestEnv("refresh_asset", t, mockTinyWasmHandler)
-	env.AssetsHandler.WriteOnDisk = true
+	env.AssetsHandler.SetWorkMode(DiskMode)
 	defer env.CleanDirectory()
 
 	// Prepare JS files in different directories to simulate a real project
@@ -146,7 +146,7 @@ WebAssembly.instantiateStreaming(fetch("main.wasm"), minimalRuntime.importObject
 // TestRefreshAssetCSS verifies that RefreshAsset works for CSS files
 func TestRefreshAssetCSS(t *testing.T) {
 	env := setupTestEnv("refresh_asset_css", t)
-	env.AssetsHandler.WriteOnDisk = true
+	env.AssetsHandler.SetWorkMode(DiskMode)
 	defer env.CleanDirectory()
 
 	// Create CSS files
@@ -189,30 +189,24 @@ func TestRefreshAssetCSS(t *testing.T) {
 	t.Log("✓ RefreshAsset works correctly for CSS files")
 }
 
-// TestRefreshAssetWriteOnDisk verifies that RefreshAsset enables WriteOnDisk
-// when it's initially disabled
-func TestRefreshAssetWriteOnDisk(t *testing.T) {
-	env := setupTestEnv("refresh_asset_write_on_disk", t)
+// TestRefreshAssetDiskMode verifies that RefreshAsset works correctly in DiskMode.
+func TestRefreshAssetDiskMode(t *testing.T) {
+	env := setupTestEnv("refresh_asset_disk_mode", t)
 	defer env.CleanDirectory()
 
-	// Disable WriteOnDisk initially
-	env.AssetsHandler.WriteOnDisk = false
+	// Set DiskMode
+	env.AssetsHandler.SetWorkMode(DiskMode)
 
 	// Create a JS file
 	filePath := filepath.Join(env.BaseDir, "modules", "test.js")
 	require.NoError(t, os.MkdirAll(filepath.Dir(filePath), 0755))
 	require.NoError(t, os.WriteFile(filePath, []byte("console.log('test');"), 0644))
 
-	// Process the file (should not write to disk)
+	// Process the file (should write to disk)
 	require.NoError(t, env.AssetsHandler.NewFileEvent("test.js", ".js", filePath, "write"))
 
-	// File might or might not exist depending on initial state, but we'll check after refresh
-
-	// Call RefreshAsset (should enable WriteOnDisk and write to disk)
+	// Call RefreshAsset
 	env.AssetsHandler.RefreshAsset(".js")
-
-	// Verify that WriteOnDisk is now enabled
-	require.True(t, env.AssetsHandler.WriteOnDisk, "RefreshAsset should enable WriteOnDisk")
 
 	// Verify that the file was written to disk
 	require.FileExists(t, env.MainJsPath, "script.js should exist after RefreshAsset")
@@ -221,7 +215,7 @@ func TestRefreshAssetWriteOnDisk(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, string(content), "test", "script.js should contain the test file content")
 
-	t.Log("✓ RefreshAsset correctly enables WriteOnDisk")
+	t.Log("✓ RefreshAsset works correctly in DiskMode")
 }
 
 // TestRefreshAssetRebuildsInitCode verifies that RefreshAsset re-fetches
@@ -235,7 +229,7 @@ func TestRefreshAssetRebuildsInitCode(t *testing.T) {
 	}
 
 	env := setupTestEnv("refresh_asset_init_code", t, mockInitializer)
-	env.AssetsHandler.WriteOnDisk = true
+	env.AssetsHandler.SetWorkMode(DiskMode)
 	defer env.CleanDirectory()
 
 	// Create a simple JS file
@@ -289,7 +283,7 @@ func TestRefreshAssetMultipleFiles(t *testing.T) {
 	}
 
 	env := setupTestEnv("refresh_asset_multiple", t, mockHandler)
-	env.AssetsHandler.WriteOnDisk = true
+	env.AssetsHandler.SetWorkMode(DiskMode)
 	defer env.CleanDirectory()
 
 	// Create multiple JS files in different locations

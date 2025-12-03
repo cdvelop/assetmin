@@ -11,7 +11,7 @@ import (
 
 func TestCacheConcurrency(t *testing.T) {
 	env := setupTestEnv("cache_concurrency", t)
-	env.AssetsHandler.WriteOnDisk = true
+	env.AssetsHandler.SetWorkMode(DiskMode)
 	defer env.CleanDirectory()
 
 	// Create a test file
