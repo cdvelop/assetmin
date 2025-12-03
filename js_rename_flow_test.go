@@ -19,6 +19,7 @@ func TestJSRenameFlow(t *testing.T) {
 
 	// Setup test environment
 	env := setupTestEnv("js_rename_flow", t)
+	env.AssetsHandler.WriteOnDisk = true
 	//defer env.CleanDirectory()
 
 	// Prepare three initial JS files
@@ -115,6 +116,7 @@ func TestJSRenameScenarios(t *testing.T) {
 		{
 			name: "pure_rename_same_content",
 			scenario: func(t *testing.T, env *TestEnvironment) {
+				env.AssetsHandler.WriteOnDisk = true
 				// Setup three initial JS files
 				file1Path := filepath.Join(env.BaseDir, "modules", "module1", "script1.js")
 				file2Path := filepath.Join(env.BaseDir, "modules", "module2", "script2.js")
@@ -154,6 +156,7 @@ func TestJSRenameScenarios(t *testing.T) {
 		{
 			name: "rename_with_different_content",
 			scenario: func(t *testing.T, env *TestEnvironment) {
+				env.AssetsHandler.WriteOnDisk = true
 				// Setup three initial JS files
 				file1Path := filepath.Join(env.BaseDir, "modules", "module1", "script1.js")
 				file2Path := filepath.Join(env.BaseDir, "modules", "module2", "script2.js")
@@ -195,6 +198,7 @@ func TestJSRenameScenarios(t *testing.T) {
 		{
 			name: "duplicate_content_rename",
 			scenario: func(t *testing.T, env *TestEnvironment) {
+				env.AssetsHandler.WriteOnDisk = true
 				// Two files with same content, rename one -> both entries should remain
 				file1Path := filepath.Join(env.BaseDir, "modules", "module1", "script1.js")
 				file2Path := filepath.Join(env.BaseDir, "modules", "module2", "script2.js")
@@ -233,6 +237,7 @@ func TestJSRenameScenarios(t *testing.T) {
 		{
 			name: "rename_then_write",
 			scenario: func(t *testing.T, env *TestEnvironment) {
+				env.AssetsHandler.WriteOnDisk = true
 				// Rename then write new content (editor save after rename)
 				file1Path := filepath.Join(env.BaseDir, "modules", "module1", "script1.js")
 				file2Path := filepath.Join(env.BaseDir, "modules", "module2", "script2.js")
