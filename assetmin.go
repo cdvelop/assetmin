@@ -2,6 +2,7 @@ package assetmin
 
 import (
 	"os"
+	"path"
 	"regexp"
 	"sync"
 
@@ -63,7 +64,15 @@ func NewAssetMin(ac *Config) *AssetMin {
 	c.mainJsHandler = newAssetFile(c.jsMainFileName, "text/javascript", ac, ac.GetRuntimeInitializerJS)
 	c.spriteSvgHandler = NewSvgHandler(ac, c.svgMainFileName)
 	c.faviconSvgHandler = NewFaviconSvgHandler(ac, c.svgFaviconFileName)
-	c.indexHtmlHandler = NewHtmlHandler(ac, c.htmlMainFileName, c.cssMainFileName, c.jsMainFileName)
+
+	// Set URL paths before creating the index handler that depends on them
+	c.mainStyleCssHandler.urlPath = path.Join("/", ac.AssetsURLPrefix, c.cssMainFileName)
+	c.mainJsHandler.urlPath = path.Join("/", ac.AssetsURLPrefix, c.jsMainFileName)
+	c.spriteSvgHandler.urlPath = path.Join("/", ac.AssetsURLPrefix, c.svgMainFileName)
+	c.faviconSvgHandler.urlPath = path.Join("/", ac.AssetsURLPrefix, c.svgFaviconFileName)
+
+	c.indexHtmlHandler = NewHtmlHandler(ac, c.htmlMainFileName, c.mainStyleCssHandler.URLPath(), c.mainJsHandler.URLPath())
+	c.indexHtmlHandler.urlPath = "/" // Index is always at root
 	c.min.Add("text/html", &html.Minifier{
 		KeepDocumentTags: true,
 		KeepEndTags:      true,

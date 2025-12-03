@@ -27,28 +27,28 @@ func isCompleteHtmlDocument(content string) bool {
 
 type htmlHandler struct {
 	*asset
-	cssName string
-	jsName  string
+	cssURL string
+	jsURL  string
 }
 
 // generateStylesheetLink returns HTML tag for linking a CSS stylesheet
 func (h *htmlHandler) generateStylesheetLink() []byte {
-	return []byte(`<link rel="stylesheet" href="` + h.cssName + `" type="text/css" />`)
+	return []byte(`<link rel="stylesheet" href="` + h.cssURL + `" type="text/css" />`)
 }
 
 // generateJavaScriptTag returns HTML script tag for a JavaScript file
 func (h *htmlHandler) generateJavaScriptTag() []byte {
-	return []byte(`<script src="` + h.jsName + `" type="text/javascript"></script>`)
+	return []byte(`<script src="` + h.jsURL + `" type="text/javascript"></script>`)
 }
 
 // NewHtmlHandler creates an HTML asset handler using the provided output filename
-func NewHtmlHandler(ac *Config, outputName, cssName, jsName string) *asset {
+func NewHtmlHandler(ac *Config, outputName, cssURL, jsURL string) *asset {
 	af := newAssetFile(outputName, "text/html", ac, nil)
 
 	hh := &htmlHandler{
-		asset:   af,
-		cssName: cssName,
-		jsName:  jsName,
+		asset:  af,
+		cssURL: cssURL,
+		jsURL:  jsURL,
 	}
 	//  default marcador de inicio index HTML
 	af.contentOpen = append(af.contentOpen, &contentFile{
