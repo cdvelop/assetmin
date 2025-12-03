@@ -106,13 +106,12 @@ func (c *AssetMin) processAsset(fh *asset) error {
 }
 
 func (c *AssetMin) UnobservedFiles() []string {
-	// Return the full path of the output files to ignore
+	// Only truly generated/merged files should be unobserved.
+	// index.html and favicon.svg are often user-editable.
 	return []string{
 		c.mainStyleCssHandler.outputPath,
 		c.mainJsHandler.outputPath,
 		c.spriteSvgHandler.outputPath,
-		c.faviconSvgHandler.outputPath,
-		c.indexHtmlHandler.outputPath,
 	}
 }
 

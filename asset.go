@@ -15,6 +15,7 @@ import (
 type asset struct {
 	fileOutputName string                 // eg: main.js,style.css,index.html,sprite.svg
 	outputPath     string                 // full path to output file eg: web/public/main.js
+	urlPath        string                 // HTTP route path, e.g., "/assets/style.css" or "/style.css"
 	mediatype      string                 // eg: "text/html", "text/css", "image/svg+xml"
 	initCode       func() (string, error) // eg js: "console.log('hello world')". eg: css: "body{color:red}" eg: html: "<html></html>". eg: svg: "<svg></svg>"
 
@@ -210,4 +211,9 @@ func (h *asset) GetMinifiedContent(minifier *minify.M) ([]byte, error) {
 	h.cachedMinified = minified
 	h.cacheValid = true
 	return h.cachedMinified, nil
+}
+
+// URLPath returns the URL path for the asset.
+func (h *asset) URLPath() string {
+	return h.urlPath
 }
