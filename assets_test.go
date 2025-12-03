@@ -16,6 +16,7 @@ func TestAssetScenario(t *testing.T) {
 		// si el archivo no existe se considerara un error, la libreria debe ser capas de crear el directorio de trabajo web/public
 
 		env := setupTestEnv("uc01_empty_directory", t)
+		env.AssetsHandler.WriteOnDisk = true
 		// 1. Create JS file and verify output
 		jsFileName := "script1.js"
 		jsFilePath := filepath.Join(env.BaseDir, jsFileName)
@@ -43,7 +44,7 @@ func TestAssetScenario(t *testing.T) {
 		// Se espera que el contenido se actualice correctamente (sin duplicados) y
 		// que el contenido sea eliminado cuando se elimina el archivo
 		env := setupTestEnv("uc02_crud_operations", t)
-
+		env.AssetsHandler.WriteOnDisk = true
 		// Probar operaciones CRUD para archivos JS
 		t.Run("js_file", func(t *testing.T) {
 			env.TestFileCRUDOperations(".js")
@@ -62,6 +63,7 @@ func TestAssetScenario(t *testing.T) {
 		// archivos JS son escritos simultáneamente
 		// Se espera que todos los contenidos se encuentren en web/public/main.js
 		env := setupTestEnv("uc03_concurrent_writes", t)
+		env.AssetsHandler.WriteOnDisk = true
 		env.TestConcurrentFileProcessing(".js", 5)
 		env.CleanDirectory()
 	})
@@ -71,36 +73,8 @@ func TestAssetScenario(t *testing.T) {
 		// archivos CSS son escritos simultáneamente
 		// Se espera que todos los contenidos se encuentren en web/public/main.css
 		env := setupTestEnv("uc04_concurrent_writes_css", t)
+		env.AssetsHandler.WriteOnDisk = true
 		env.TestConcurrentFileProcessing(".css", 5)
-		env.CleanDirectory()
-	})
-
-	t.Run("uc05_theme_priority", func(t *testing.T) {
-		// En este caso probamos que el contenido de los archivos en la carpeta 'theme'
-		// aparezcan antes que los archivos de la carpeta 'modulos' en el archivo de salida
-
-		funcInitJs := func() (string, error) {
-			// Simulate WebAssembly initialization code
-			return "// WebAssembly initialization code\nconst wasmMemory = new WebAssembly.Memory({initial:10, maximum:100});\n", nil
-		}
-
-		env := setupTestEnv("uc05_theme_priority", t, funcInitJs)
-
-		// Probar prioridad de theme para archivos JS
-		t.Run("js_theme_priority", func(t *testing.T) {
-			env.TestThemePriority(".js")
-		})
-
-		// Probar prioridad de theme para archivos CSS
-		t.Run("css_theme_priority", func(t *testing.T) {
-			env.TestThemePriority(".css")
-		})
-
-		// Probar que el código de inicialización JS aparezca al principio
-		t.Run("js_init_code_priority", func(t *testing.T) {
-			env.TestJSInitCodePriority()
-		})
-
 		env.CleanDirectory()
 	})
 

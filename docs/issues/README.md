@@ -17,7 +17,7 @@ This directory contains specifications for pending and in-progress features.
 
 | # | Feature | Document |
 |---|---------|----------|
-| 1 | **Config Simplification** | [FEATURE_CONFIG_SIMPLIFICATION.md](FEATURE_CONFIG_SIMPLIFICATION.md) |
+| 1 | ✅ **Config Simplification** | [FEATURE_CONFIG_SIMPLIFICATION.md](FEATURE_CONFIG_SIMPLIFICATION.md) |
 | 2 | Asset Caching | [FEATURE_ASSET_CACHING.md](FEATURE_ASSET_CACHING.md) |
 | 3 | HTTP Routes & Work Modes | [FEATURE_HTTP_ROUTES_WORK_MODES.md](FEATURE_HTTP_ROUTES_WORK_MODES.md) |
 | 4 | Template System Refactor | [FEATURE_TEMPLATE_REFACTOR.md](FEATURE_TEMPLATE_REFACTOR.md) |

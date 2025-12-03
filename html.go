@@ -50,9 +50,6 @@ func NewHtmlHandler(ac *Config, outputName, cssName, jsName string) *asset {
 		cssName: cssName,
 		jsName:  jsName,
 	}
-	// Configurar el handler de notificación de archivo de salida
-	af.notifyMeIfOutputFileExists = hh.notifyMeIfOutputFileExists
-
 	//  default marcador de inicio index HTML
 	af.contentOpen = append(af.contentOpen, &contentFile{
 		path: "index-open.html",
@@ -75,34 +72,6 @@ func NewHtmlHandler(ac *Config, outputName, cssName, jsName string) *asset {
 	})
 
 	return af
-}
-
-func (h *htmlHandler) notifyMeIfOutputFileExists(content string) {
-	// Si hay contenido, significa que el archivo de salida existe
-	if content != "" {
-		// Solo analizamos el archivo existente si no hay un theme/index.html
-		// que ya haya establecido el contenido
-		if len(h.asset.contentOpen) == 1 && h.asset.contentOpen[0].path == "index-open.html" {
-			// Estamos usando el HTML por defecto, analicemos el existente
-			h.asset.contentOpen = h.asset.contentOpen[:0]
-			h.asset.contentClose = h.asset.contentClose[:0]
-			h.asset.contentMiddle = h.asset.contentMiddle[:0]
-
-			// Analizamos el contenido existente para identificar las secciones
-			openContent, closeContent := parseExistingHtmlContent(content)
-
-			// Reemplazamos el contenido de apertura y cierre con el encontrado
-			h.asset.contentOpen = append(h.asset.contentOpen, &contentFile{
-				path:    "existing-index-open.html",
-				content: []byte(openContent),
-			})
-
-			h.asset.contentClose = append(h.asset.contentClose, &contentFile{
-				path:    "existing-index-close.html",
-				content: []byte(closeContent),
-			})
-		}
-	}
 }
 
 // parseExistingHtmlContent analiza un archivo HTML existente para identificar

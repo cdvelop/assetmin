@@ -6,21 +6,25 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
+
+	"github.com/tdewolff/minify/v2"
 )
 
 // represents a file handler for processing and minifying assets
 type asset struct {
+	mu             sync.RWMutex
 	fileOutputName string                 // eg: main.js,style.css,index.html,sprite.svg
 	outputPath     string                 // full path to output file eg: web/public/main.js
 	mediatype      string                 // eg: "text/html", "text/css", "image/svg+xml"
 	initCode       func() (string, error) // eg js: "console.log('hello world')". eg: css: "body{color:red}" eg: html: "<html></html>". eg: svg: "<svg></svg>"
-	themeFolder    string                 // eg: web/theme
 
 	contentOpen   []*contentFile // eg: files from theme folder
 	contentMiddle []*contentFile //eg: files from modules folder
 	contentClose  []*contentFile // eg: files js from testin or end tags
 
-	notifyMeIfOutputFileExists func(content string) // optional callback to notify if content if != "" file exists
+	cachedMinified []byte // Minified content ready to serve
+	cacheValid     bool   // True if cache matches current content
 }
 
 // contentFile represents a file with its path and content
@@ -45,15 +49,13 @@ func (f *contentFile) WriteToDisk() error {
 // newAssetFile creates a new asset with the specified parameters
 func newAssetFile(outputName, mediaType string, ac *Config, initCode func() (string, error)) *asset {
 	handler := &asset{
-		fileOutputName:             outputName,
-		outputPath:                 filepath.Join(ac.OutputDir(), outputName),
-		mediatype:                  mediaType,
-		initCode:                   initCode,
-		themeFolder:                ac.ThemeFolder(),
-		contentOpen:                []*contentFile{},
-		contentMiddle:              []*contentFile{},
-		contentClose:               []*contentFile{},
-		notifyMeIfOutputFileExists: nil, // Default to nil notification
+		fileOutputName: outputName,
+		outputPath:     filepath.Join(ac.OutputDir, outputName),
+		mediatype:      mediaType,
+		initCode:       initCode,
+		contentOpen:    []*contentFile{},
+		contentMiddle:  []*contentFile{},
+		contentClose:   []*contentFile{},
 	}
 
 	return handler
@@ -61,67 +63,12 @@ func newAssetFile(outputName, mediaType string, ac *Config, initCode func() (str
 
 // assetHandlerFiles ej &mainJsHandler, &mainStyleCssHandler
 func (h *asset) UpdateContent(filePath, event string, f *contentFile) (err error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
-	// Para archivos HTML, manejar theme/index.html de forma especial
-	if strings.HasSuffix(h.fileOutputName, ".html") && strings.Contains(filePath, h.themeFolder) && strings.HasSuffix(filePath, "index.html") {
-		// theme/index.html debe reemplazar completamente el contenido HTML
-		switch event {
-		case "create", "write", "modify":
-			// Limpiar solo el contenido open y close, mantener modules
-			h.contentOpen = h.contentOpen[:0]
-			h.contentClose = h.contentClose[:0]
-
-			// Analizar el contenido del theme/index.html para dividirlo en secciones
-			openContent, closeContent := parseExistingHtmlContent(string(f.content))
-
-			// Establecer el nuevo contenido
-			h.contentOpen = append(h.contentOpen, &contentFile{
-				path:    "theme-index-open.html",
-				content: []byte(openContent),
-			})
-
-			h.contentClose = append(h.contentClose, &contentFile{
-				path:    "theme-index-close.html",
-				content: []byte(closeContent),
-			})
-
-		case "remove", "delete":
-			// Si se elimina theme/index.html, volver al HTML por defecto
-			h.contentOpen = h.contentOpen[:0]
-			h.contentClose = h.contentClose[:0]
-
-			// Restaurar contenido por defecto HTML
-			h.contentOpen = append(h.contentOpen, &contentFile{
-				path: "index-open.html",
-				content: []byte(`<!doctype html>
-<html>
-<head>
-	<meta charset="utf-8">
-	<title></title>
-	<link rel="stylesheet" href="style.css" type="text/css" />
-</head>
-<body>`),
-			})
-
-			h.contentClose = append(h.contentClose, &contentFile{
-				path: "index-close.html",
-				content: []byte(`<script src="main.js" type="text/javascript"></script>
-</body>
-</html>`),
-			})
-		}
-		return nil
-	}
-
-	// Lógica original para módulos HTML regulares y otros archivos
+	h.cacheValid = false
 	// por defecto los archivos de destino son contenido comun eg: modulos, archivos sueltos
 	filesToUpdate := &h.contentMiddle
-
-	// verificar si es de tema así actualizamos como archivos apertura (para CSS, JS, etc.)
-	// pero NO para index.html de tema (ya manejado arriba)
-	if strings.Contains(filePath, h.themeFolder) && !strings.HasSuffix(filePath, "index.html") {
-		filesToUpdate = &h.contentOpen
-	}
 
 	// Para archivos HTML, verificar si es un documento HTML completo
 	// Si es así, debe ser ignorado ya que no es un módulo/fragmento
@@ -161,22 +108,7 @@ func (h *asset) UpdateContent(filePath, event string, f *contentFile) (err error
 				*filesToUpdate = append(*filesToUpdate, f)
 			}
 		}
-
-		// Debug: log what was updated (commented out)
-		// if h.fileOutputName == "main.js" {
-		//     fmt.Printf("DEBUG asset.UpdateContent: %s event=%s, total files=%d\n", filePath, event, len(*filesToUpdate))
-		//     for i, cf := range *filesToUpdate {
-		//         fmt.Printf("DEBUG   [%d] path=%s size=%d\n", i, cf.path, len(cf.content))
-		//     }
-		// }
-
-	case "rename": // cuando se renombra un archivo, se crea uno nuevo y se elimina el antiguo
-		// Previously we removed the old entry here. That causes the create event
-		// for the new file to append a new entry, potentially duplicating or
-		// losing ordering information. Instead, treat rename as a no-op and let
-		// the subsequent create/write event reuse/update the existing entry.
-		// No action required here.
-
+	case "rename":
 	case "remove", "delete":
 		if idx := findFileIndex(*filesToUpdate, filePath); idx != -1 {
 			*filesToUpdate = slices.Delete((*filesToUpdate), idx, idx+1)
@@ -195,8 +127,7 @@ func findFileIndex(files []*contentFile, filePath string) int {
 	return -1
 }
 
-// WriteContent processes the asset content and writes it to the provided buffer
-func (h *asset) WriteContent(buf *bytes.Buffer) {
+func (h *asset) writeContent(buf *bytes.Buffer) {
 	if h.initCode != nil {
 		initCode, err := h.initCode()
 		if err == nil {
@@ -221,4 +152,46 @@ func (h *asset) WriteContent(buf *bytes.Buffer) {
 		buf.Write(f.content)
 		buf.WriteString("\n") // Add newline between files
 	}
+}
+
+// WriteContent processes the asset content and writes it to the provided buffer
+func (h *asset) WriteContent(buf *bytes.Buffer) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	h.writeContent(buf)
+}
+
+func (h *asset) RegenerateCache(minifier *minify.M) error {
+	var buf bytes.Buffer
+	h.writeContent(&buf)
+
+	minified, err := minifier.Bytes(h.mediatype, buf.Bytes())
+	if err != nil {
+		return err
+	}
+
+	h.cachedMinified = minified
+	h.cacheValid = true
+	return nil
+}
+
+func (h *asset) GetMinifiedContent(minifier *minify.M) ([]byte, error) {
+	h.mu.RLock()
+	if h.cacheValid {
+		defer h.mu.RUnlock()
+		return h.cachedMinified, nil
+	}
+	h.mu.RUnlock()
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	// Double-checked locking
+	if h.cacheValid {
+		return h.cachedMinified, nil
+	}
+
+	if err := h.RegenerateCache(minifier); err != nil {
+		return nil, err
+	}
+	return h.cachedMinified, nil
 }

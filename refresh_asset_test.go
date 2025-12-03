@@ -49,6 +49,7 @@ WebAssembly.instantiateStreaming(fetch("main.wasm"), minimalRuntime.importObject
 
 	// Setup test environment with mock TinyWasm handler
 	env := setupTestEnv("refresh_asset", t, mockTinyWasmHandler)
+	env.AssetsHandler.WriteOnDisk = true
 	defer env.CleanDirectory()
 
 	// Prepare JS files in different directories to simulate a real project
@@ -145,6 +146,7 @@ WebAssembly.instantiateStreaming(fetch("main.wasm"), minimalRuntime.importObject
 // TestRefreshAssetCSS verifies that RefreshAsset works for CSS files
 func TestRefreshAssetCSS(t *testing.T) {
 	env := setupTestEnv("refresh_asset_css", t)
+	env.AssetsHandler.WriteOnDisk = true
 	defer env.CleanDirectory()
 
 	// Create CSS files
@@ -233,6 +235,7 @@ func TestRefreshAssetRebuildsInitCode(t *testing.T) {
 	}
 
 	env := setupTestEnv("refresh_asset_init_code", t, mockInitializer)
+	env.AssetsHandler.WriteOnDisk = true
 	defer env.CleanDirectory()
 
 	// Create a simple JS file
@@ -286,6 +289,7 @@ func TestRefreshAssetMultipleFiles(t *testing.T) {
 	}
 
 	env := setupTestEnv("refresh_asset_multiple", t, mockHandler)
+	env.AssetsHandler.WriteOnDisk = true
 	defer env.CleanDirectory()
 
 	// Create multiple JS files in different locations
