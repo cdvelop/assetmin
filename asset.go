@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
+
+	"github.com/tdewolff/minify/v2"
 )
 
 // represents a file handler for processing and minifying assets
@@ -18,6 +21,10 @@ type asset struct {
 	contentOpen   []*contentFile // eg: files from theme folder
 	contentMiddle []*contentFile //eg: files from modules folder
 	contentClose  []*contentFile // eg: files js from testin or end tags
+
+	mu             sync.RWMutex // Mutex for thread-safe access to the cache
+	cachedMinified []byte       // Minified content ready to serve
+	cacheValid     bool         // True if cache matches current content
 }
 
 // contentFile represents a file with its path and content
@@ -56,6 +63,7 @@ func newAssetFile(outputName, mediaType string, ac *Config, initCode func() (str
 
 // assetHandlerFiles ej &mainJsHandler, &mainStyleCssHandler
 func (h *asset) UpdateContent(filePath, event string, f *contentFile) (err error) {
+	h.InvalidateCache()
 	// por defecto los archivos de destino son contenido comun eg: modulos, archivos sueltos
 	filesToUpdate := &h.contentMiddle
 
@@ -142,4 +150,64 @@ func (h *asset) WriteContent(buf *bytes.Buffer) {
 		buf.Write(f.content)
 		buf.WriteString("\n") // Add newline between files
 	}
+}
+
+// InvalidateCache marks the asset's cache as invalid.
+// It acquires a write lock to ensure thread safety.
+func (h *asset) InvalidateCache() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.cacheValid = false
+}
+
+// RegenerateCache generates the minified content for the asset and updates the cache.
+// It acquires a write lock to ensure thread-safe modification of the cache.
+func (h *asset) RegenerateCache(minifier *minify.M) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	var buf bytes.Buffer
+	h.WriteContent(&buf)
+
+	minified, err := minifier.Bytes(h.mediatype, buf.Bytes())
+	if err != nil {
+		return err
+	}
+
+	h.cachedMinified = minified
+	h.cacheValid = true
+	return nil
+}
+
+// GetMinifiedContent returns the minified content of the asset, regenerating the cache if necessary.
+// It uses a double-checked locking pattern with a read-write mutex for thread-safe access.
+func (h *asset) GetMinifiedContent(minifier *minify.M) ([]byte, error) {
+	// First, try with a read lock to check if the cache is valid.
+	h.mu.RLock()
+	if h.cacheValid {
+		defer h.mu.RUnlock()
+		return h.cachedMinified, nil
+	}
+	h.mu.RUnlock()
+
+	// If the cache is invalid, acquire a write lock to regenerate it.
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	// It's possible another goroutine regenerated the cache while we were waiting for the write lock.
+	// So, we need to double-check if the cache is still invalid.
+	if h.cacheValid {
+		return h.cachedMinified, nil
+	}
+
+	var buf bytes.Buffer
+	h.WriteContent(&buf)
+
+	minified, err := minifier.Bytes(h.mediatype, buf.Bytes())
+	if err != nil {
+		return nil, err
+	}
+
+	h.cachedMinified = minified
+	h.cacheValid = true
+	return h.cachedMinified, nil
 }
