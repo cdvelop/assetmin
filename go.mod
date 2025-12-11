@@ -1,4 +1,4 @@
-module github.com/cdvelop/assetmin
+module github.com/tinywasm/assetmin
 
 go 1.23.0
 
